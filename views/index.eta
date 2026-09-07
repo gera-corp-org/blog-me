@@ -1,0 +1,20 @@
+<%~ include('partials/head', it) %>
+<% if (it.posts.length === 0) { %>
+  <p class="empty">Пока ни одной записи.</p>
+<% } %>
+<% it.posts.forEach(function (post) { %>
+  <article class="post-card">
+    <h2><a href="/p/<%= post.slug %>"><%= post.title %></a></h2>
+    <p class="meta"><time datetime="<%= post.published_at %>"><%= it.formatDate(post.published_at) %></time></p>
+    <p><%= post.excerpt %></p>
+    <p class="tags"><% post.tags.forEach(function (tag) { %><a class="tag" href="/tag/<%= tag.slug %>">#<%= tag.name %></a> <% }) %></p>
+  </article>
+<% }) %>
+<% if (it.pages > 1) { %>
+  <nav class="pagination">
+    <% if (it.page > 1) { %><a href="/?page=<%= it.page - 1 %>">Новее</a><% } %>
+    <span><%= it.page %> из <%= it.pages %></span>
+    <% if (it.page < it.pages) { %><a href="/?page=<%= it.page + 1 %>">Старее</a><% } %>
+  </nav>
+<% } %>
+<%~ include('partials/foot', it) %>

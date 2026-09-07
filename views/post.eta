@@ -1,0 +1,11 @@
+<%~ include('partials/head', it) %>
+<article class="post">
+  <h1><%= it.post.title %></h1>
+  <p class="meta">
+    <time datetime="<%= it.post.published_at || it.post.created_at %>"><%= it.formatDate(it.post.published_at || it.post.created_at) %></time>
+    <% if (it.post.status === 'draft') { %><span class="draft-badge">черновик</span><% } %>
+  </p>
+  <div class="post-body"><%~ it.post.body_html %></div>
+  <p class="tags"><% it.tags.forEach(function (tag) { %><a class="tag" href="/tag/<%= tag.slug %>">#<%= tag.name %></a> <% }) %></p>
+</article>
+<%~ include('partials/foot', it) %>

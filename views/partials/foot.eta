@@ -1,0 +1,7 @@
+    </main>
+    <footer class="site-footer">
+      <p><%= it.site.description %></p>
+      <p><a href="/feed.xml">Подписка</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= it.pageTitle %></title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="alternate" type="application/atom+xml" title="<%= it.site.title %>" href="/feed.xml">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="site-title" href="/"><%= it.site.title %></a>
+      <form class="search-form" action="/search" method="get" role="search">
+        <input type="search" name="q" value="<%= it.q %>" placeholder="Поиск" aria-label="Поиск по записям">
+      </form>
+    </header>
+    <main>
