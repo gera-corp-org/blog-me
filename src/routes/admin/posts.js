@@ -57,60 +57,53 @@ export async function adminPostRoutes(app) {
     });
   });
 
-  app.post('/admin/posts', write, async (request, reply) => {
+  // Создание и правка отличаются лишь тем, есть ли исходная запись.
+  // Общий код держим в одном месте: разъехавшиеся копии уже дали расхождение
+  // — при пустом заголовке правка теряла выбранный статус, а создание нет.
+  const saveForm = async (request, reply, existing) => {
     const form = readForm(request.body);
 
     if (!form.title) {
       return editorPage(request, reply, {
         code: 400,
         error: 'Заголовок обязателен.',
-        post: { id: null, title: form.title, slug: form.slugInput, body_md: form.bodyMd, status: form.status },
+        post: {
+          id: existing?.id ?? null,
+          title: form.title,
+          slug: form.slugInput,
+          body_md: form.bodyMd,
+          status: form.status,
+        },
         tagsValue: form.tags.join(', '),
       });
     }
 
     const bodyHtml = renderMarkdown(form.bodyMd);
-    const post = app.posts.create({
-      slug: uniqueSlug(slugify(form.slugInput || form.title), (candidate) => app.posts.slugExists(candidate)),
+    const fields = {
+      slug: uniqueSlug(
+        slugify(form.slugInput || form.title),
+        (candidate) => app.posts.slugExists(candidate, existing?.id ?? null),
+      ),
       title: form.title,
       bodyMd: form.bodyMd,
       bodyHtml,
       excerpt: makeExcerpt(bodyHtml),
       status: form.status,
-    });
+    };
+
+    const post = existing ? app.posts.update(existing.id, fields) : app.posts.create(fields);
     app.tags.setForPost(post.id, form.tags);
 
     return reply.redirect(`/admin/posts/${post.id}/edit`, 303);
-  });
+  };
+
+  app.post('/admin/posts', write, async (request, reply) => saveForm(request, reply, null));
 
   app.post('/admin/posts/:id', write, async (request, reply) => {
-    const id = Number(request.params.id);
-    const existing = app.posts.findById(id);
+    const existing = app.posts.findById(Number(request.params.id));
     if (!existing) return reply.callNotFound();
 
-    const form = readForm(request.body);
-
-    if (!form.title) {
-      return editorPage(request, reply, {
-        code: 400,
-        error: 'Заголовок обязателен.',
-        post: { ...existing, title: form.title, slug: form.slugInput, body_md: form.bodyMd },
-        tagsValue: form.tags.join(', '),
-      });
-    }
-
-    const bodyHtml = renderMarkdown(form.bodyMd);
-    app.posts.update(id, {
-      slug: uniqueSlug(slugify(form.slugInput || form.title), (candidate) => app.posts.slugExists(candidate, id)),
-      title: form.title,
-      bodyMd: form.bodyMd,
-      bodyHtml,
-      excerpt: makeExcerpt(bodyHtml),
-      status: form.status,
-    });
-    app.tags.setForPost(id, form.tags);
-
-    return reply.redirect(`/admin/posts/${id}/edit`, 303);
+    return saveForm(request, reply, existing);
   });
 
   app.post('/admin/posts/:id/delete', write, async (request, reply) => {

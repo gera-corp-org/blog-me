@@ -91,6 +91,22 @@ test('правка меняет текст, разметку и теги', async
   await cleanup();
 });
 
+test('правка без смены адреса не подставляет номер к слагу', async () => {
+  const { app, cleanup } = await createTestApp();
+  const { cookie, csrf } = await login(app);
+  const existing = seedPost(app, { title: 'Заметка', slug: 'zametka' });
+
+  await app.inject({
+    method: 'POST',
+    url: `/admin/posts/${existing.id}`,
+    ...post(cookie, { title: 'Заметка', slug: 'zametka', tags: '', body: 'Другой текст', action: 'draft', _csrf: csrf }),
+  });
+
+  // Собственный слаг записи не должен считаться занятым ею же.
+  assert.equal(app.posts.findById(existing.id).slug, 'zametka');
+  await cleanup();
+});
+
 test('удаление убирает запись', async () => {
   const { app, cleanup } = await createTestApp();
   const { cookie, csrf } = await login(app);
