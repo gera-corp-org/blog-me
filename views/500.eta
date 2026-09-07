@@ -1,0 +1,4 @@
+<%~ include('partials/head', it) %>
+<h1>Ошибка</h1>
+<p>Что-то пошло не так. Попробуйте ещё раз или вернитесь на <a href="/">главную</a>.</p>
+<%~ include('partials/foot', it) %>

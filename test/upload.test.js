@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createTestApp, login } from './helpers/app.js';
 import { detectImageType } from '../src/domain/imageType.js';
@@ -93,6 +93,32 @@ test('слишком большой файл отклоняется', async () =
   });
 
   assert.equal(response.statusCode, 413);
+  // Тело тоже проверяем: без разбора ошибки код 413 придёт и от библиотеки,
+  // но с английским текстом.
+  assert.equal(response.json().error, 'Файл слишком большой');
+  await cleanup();
+});
+
+test('при отказе записи на диск наружу не уходит путь сервера', async () => {
+  const { app, config, cleanup } = await createTestApp();
+  const { cookie, csrf } = await login(app);
+  // Подменяем каталог загрузок файлом: запись внутрь него невозможна на
+  // любой машине, включая запуск от root, поэтому проверка устойчива.
+  rmSync(config.uploadsDir, { recursive: true, force: true });
+  writeFileSync(config.uploadsDir, 'не каталог');
+  const body = multipart(PNG);
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/admin/upload',
+    headers: { cookie, 'x-csrf-token': csrf, 'content-type': body.contentType },
+    payload: body.payload,
+  });
+
+  assert.equal(response.statusCode, 500);
+  assert.equal(response.json().error, 'Не удалось сохранить картинку');
+  assert.ok(!response.body.includes('/tmp'), `в ответе путь сервера: ${response.body}`);
+  assert.ok(!response.body.includes('EACCES') && !response.body.includes('ENOTDIR'));
   await cleanup();
 });
 

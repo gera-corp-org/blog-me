@@ -34,3 +34,27 @@ test('анонимный запрос не получает ключа сесс�
   assert.equal(response.cookies.find((cookie) => cookie.name === 'sid'), undefined);
   await cleanup();
 });
+
+test('необработанная ошибка от JSON-запроса отдаёт русский текст, без подробностей библиотеки', async () => {
+  const { app, cleanup } = await createTestApp();
+
+  const response = await app.inject({ method: 'GET', url: '/media/' });
+
+  assert.equal(response.statusCode, 403);
+  const body = response.json();
+  assert.ok(!body.error.includes('Forbidden'), `в ответе текст библиотеки: ${response.body}`);
+  assert.match(body.error, /[а-яё]/i);
+  await cleanup();
+});
+
+test('необработанная ошибка от перехода по ссылке отдаёт страницу на русском', async () => {
+  const { app, cleanup } = await createTestApp();
+
+  const response = await app.inject({ method: 'GET', url: '/media/', headers: { accept: 'text/html' } });
+
+  assert.equal(response.statusCode, 403);
+  assert.match(response.headers['content-type'], /text\/html/);
+  assert.ok(!response.body.includes('Forbidden'), `в ответе текст библиотеки: ${response.body}`);
+  assert.match(response.body, /[а-яё]/i);
+  await cleanup();
+});

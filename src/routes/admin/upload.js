@@ -11,8 +11,13 @@ export async function adminUploadRoutes(app) {
     let buffer;
     try {
       buffer = await file.toBuffer();
-    } catch {
-      return reply.code(413).send({ error: 'Файл слишком большой' });
+    } catch (error) {
+      // Разбираем именно превышение размера: сплошной catch выдавал бы
+      // «файл слишком большой» и на посторонние сбои, вводя в заблуждение.
+      if (error.code === 'FST_REQ_FILE_TOO_LARGE') {
+        return reply.code(413).send({ error: 'Файл слишком большой' });
+      }
+      throw error;
     }
     if (file.file?.truncated) {
       return reply.code(413).send({ error: 'Файл слишком большой' });
@@ -31,8 +36,15 @@ export async function adminUploadRoutes(app) {
     ].join('/');
 
     const target = join(app.config.uploadsDir, relative);
-    mkdirSync(dirname(target), { recursive: true });
-    if (!existsSync(target)) writeFileSync(target, buffer);
+    try {
+      mkdirSync(dirname(target), { recursive: true });
+      if (!existsSync(target)) writeFileSync(target, buffer);
+    } catch (error) {
+      // Наружу — короткая русская строка, подробности с путями на сервере
+      // остаются в логе: они говорят об устройстве машины больше, чем нужно.
+      request.log.error(error, 'не удалось сохранить картинку');
+      return reply.code(500).send({ error: 'Не удалось сохранить картинку' });
+    }
 
     const url = `/media/${relative}`;
     return { url, markdown: `![](${url})` };
