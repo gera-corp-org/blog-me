@@ -18,6 +18,11 @@ export function loadConfig(env = process.env) {
   return {
     port: readInt(env.PORT, 3000),
     host: env.HOST ?? '0.0.0.0',
+    // Сколько прокси перед приложением заслуживают доверия. По умолчанию
+    // один — ingress кластера. Значение true доверяло бы всей цепочке, и
+    // тогда клиент подделал бы свой адрес заголовком, обойдя ограничение
+    // попыток входа.
+    trustProxyHops: readInt(env.TRUST_PROXY_HOPS, 1),
     isProduction: env.NODE_ENV === 'production',
 
     dataDir,

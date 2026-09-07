@@ -17,6 +17,11 @@ async function decoyHash() {
 export async function adminAuthRoutes(app) {
   const limiter = createRateLimiter({ limit: LOGIN_LIMIT, windowMs: LOGIN_WINDOW_MS });
 
+  // Приманка считается при регистрации, а не в первом запросе: иначе этот
+  // первый запрос сделает два вычисления хеша вместо одного и окажется
+  // заметно дольше — ровно та разница во времени, которую мы прячем.
+  await decoyHash();
+
   const loginPage = (request, reply, { code = 200, error = null, username = '' } = {}) =>
     reply.code(code).view('admin/login.eta', {
       pageTitle: 'Вход',

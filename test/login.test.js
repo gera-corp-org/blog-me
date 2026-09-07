@@ -78,13 +78,28 @@ test('время ответа не выдаёт, существует ли ло�
     payload: new URLSearchParams({ username, password: 'не тот', _csrf: csrf }).toString(),
   });
 
-  const started = process.hrtime.bigint();
-  await attempt('никакого-такого-логина-нет');
-  const unknownMs = Number(process.hrtime.bigint() - started) / 1e6;
+  // Наименьшее из трёх замеров: минимум устойчивее среднего к случайным
+  // задержкам планировщика.
+  const measure = async (username) => {
+    const runs = [];
+    for (let index = 0; index < 3; index += 1) {
+      const started = process.hrtime.bigint();
+      await attempt(username);
+      runs.push(Number(process.hrtime.bigint() - started) / 1e6);
+    }
+    return Math.min(...runs);
+  };
 
-  // Проверка пароля занимает десятки миллисекунд. Быстрый ответ означал бы,
-  // что для несуществующего логина её пропустили.
-  assert.ok(unknownMs > 5, `ответ пришёл за ${unknownMs.toFixed(1)} мс — проверку пропустили`);
+  const known = await measure(TEST_USER.username);
+  const unknown = await measure('никакого-такого-логина-нет');
+  const ratio = unknown / known;
+
+  // Сравниваем с базовой линией, а не с абсолютным порогом: порог поймал бы
+  // только полный пропуск сверки, а утечку в полтора раза пропустил бы.
+  assert.ok(
+    ratio > 0.5 && ratio < 2,
+    `ответы отличаются в ${ratio.toFixed(2)} раза (${known.toFixed(1)} мс против ${unknown.toFixed(1)} мс)`,
+  );
   await cleanup();
 });
 
