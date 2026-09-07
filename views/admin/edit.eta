@@ -1,0 +1,22 @@
+<%~ include('/partials/head', it) %>
+<h1><%= it.post.id ? 'Правка записи' : 'Новая запись' %></h1>
+<% if (it.error) { %><p class="error"><%= it.error %></p><% } %>
+<form method="post" class="editor" data-editor
+      action="<%= it.post.id ? '/admin/posts/' + it.post.id : '/admin/posts' %>">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <label>Заголовок<input type="text" name="title" value="<%= it.post.title %>" required autofocus></label>
+  <label>Адрес<input type="text" name="slug" value="<%= it.post.slug %>" placeholder="заполнится сам"></label>
+  <label>Теги<input type="text" name="tags" value="<%= it.tagsValue %>" placeholder="через запятую"></label>
+  <label>Текст<textarea name="body" rows="20" spellcheck="true"><%= it.post.body_md %></textarea></label>
+  <div class="editor-actions">
+    <button type="submit" name="action" value="draft">Сохранить черновик</button>
+    <button type="submit" name="action" value="publish">Опубликовать</button>
+    <% if (it.post.id) { %><a href="/p/<%= it.post.slug %>">Открыть</a><% } %>
+  </div>
+</form>
+<section class="preview">
+  <h2>Предпросмотр</h2>
+  <div class="post-body" data-preview></div>
+</section>
+<script src="/static/editor.js" defer></script>
+<%~ include('/partials/foot', it) %>

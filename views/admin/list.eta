@@ -1,0 +1,28 @@
+<%~ include('/partials/head', it) %>
+<h1>Записи</h1>
+<p class="filters">
+  <a href="/admin">Все</a>
+  <a href="/admin?status=draft">Черновики</a>
+  <a href="/admin?status=published">Опубликованные</a>
+  <a href="/admin/posts/new">Новая запись</a>
+</p>
+<% if (it.posts.length === 0) { %><p class="empty">Здесь пока пусто.</p><% } %>
+<table class="admin-table">
+  <% it.posts.forEach(function (post) { %>
+    <tr>
+      <td>
+        <a href="/admin/posts/<%= post.id %>/edit"><%= post.title %></a>
+        <% if (post.status === 'draft') { %><span class="draft-badge">черновик</span><% } %>
+      </td>
+      <td class="meta"><%= it.formatDate(post.published_at || post.updated_at) %></td>
+      <td>
+        <form method="post" action="/admin/posts/<%= post.id %>/delete" class="inline-form"
+              onsubmit="return confirm('Удалить запись?')">
+          <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+          <button type="submit" class="link-button">Удалить</button>
+        </form>
+      </td>
+    </tr>
+  <% }) %>
+</table>
+<%~ include('/partials/foot', it) %>

@@ -15,3 +15,18 @@ a { color: var(--accent); }
 .draft-badge { margin-left: .5rem; padding: .1rem .4rem; border: 1px solid var(--muted); border-radius: 4px; }
 .pagination { display: flex; gap: 1rem; justify-content: space-between; border-top: 1px solid var(--muted); padding-top: 1rem; }
 .site-footer { border-top: 1px solid var(--muted); margin-top: 3rem; padding-top: 1rem; }
+.form, .editor { display: flex; flex-direction: column; gap: .9rem; margin-bottom: 2rem; }
+.form label, .editor label { display: flex; flex-direction: column; gap: .3rem; font-size: .9rem; color: var(--muted); }
+input, textarea, button { font: inherit; padding: .5rem; border: 1px solid var(--muted); border-radius: 6px;
+  background: transparent; color: var(--text); }
+textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .95rem; resize: vertical; }
+button { cursor: pointer; }
+.editor-actions { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+.inline-form { display: inline; }
+.link-button { border: none; padding: 0; background: none; color: var(--accent); text-decoration: underline; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table td { border-bottom: 1px solid rgba(127,127,127,.25); padding: .5rem 0; }
+.filters a { margin-right: 1rem; }
+.error { padding: .6rem .8rem; border-radius: 6px; background: rgba(200,60,60,.14); }
+.preview { border-top: 1px solid var(--muted); padding-top: 1rem; }
+.admin-links { display: flex; gap: .75rem; align-items: baseline; }
