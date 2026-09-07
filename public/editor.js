@@ -24,3 +24,36 @@ if (form && preview) {
 
   update();
 }
+
+const uploadInput = document.querySelector('[data-upload]');
+
+if (form && uploadInput) {
+  const body = form.querySelector('[name="body"]');
+  const token = form.querySelector('[name="_csrf"]').value;
+
+  uploadInput.addEventListener('change', async () => {
+    const [file] = uploadInput.files;
+    if (!file) return;
+
+    const data = new FormData();
+    data.append('file', file);
+
+    const response = await fetch('/admin/upload', {
+      method: 'POST',
+      headers: { 'x-csrf-token': token },
+      body: data,
+    });
+
+    if (!response.ok) {
+      const problem = await response.json().catch(() => ({ error: 'Не удалось загрузить' }));
+      window.alert(problem.error);
+      return;
+    }
+
+    const { markdown } = await response.json();
+    const at = body.selectionStart ?? body.value.length;
+    body.value = `${body.value.slice(0, at)}\n\n${markdown}\n\n${body.value.slice(at)}`;
+    body.dispatchEvent(new Event('input'));
+    uploadInput.value = '';
+  });
+}

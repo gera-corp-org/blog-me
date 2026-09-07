@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { loadConfig } from '../src/config.js';
 import { buildServer } from '../src/server.js';
 import { openDatabase } from '../src/db/index.js';
@@ -17,7 +20,8 @@ test('GET /readyz отвечает 200 на мигрированной базе'
 
 test('GET /readyz отвечает 503, пока миграции не применены', async () => {
   const db = openDatabase(':memory:');
-  const app = buildServer({ config: loadConfig({}), db });
+  const config = loadConfig({ DATA_DIR: mkdtempSync(join(tmpdir(), 'blog-test-')) });
+  const app = buildServer({ config, db });
 
   const response = await app.inject({ method: 'GET', url: '/readyz' });
 

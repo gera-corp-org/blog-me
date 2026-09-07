@@ -2,6 +2,8 @@ import Fastify from 'fastify';
 import fastifyView from '@fastify/view';
 import fastifyStatic from '@fastify/static';
 import formbody from '@fastify/formbody';
+import multipart from '@fastify/multipart';
+import { mkdirSync } from 'node:fs';
 import { Eta } from 'eta';
 import { latestMigrationVersion } from './db/migrate.js';
 import { createPostRepository } from './db/posts.js';
@@ -11,6 +13,7 @@ import { publicPostRoutes } from './routes/public/posts.js';
 import { adminAuthRoutes } from './routes/admin/auth.js';
 import { adminPostRoutes } from './routes/admin/posts.js';
 import { adminPasswordRoutes } from './routes/admin/password.js';
+import { adminUploadRoutes } from './routes/admin/upload.js';
 import securityPlugin from './plugins/security.js';
 import authPlugin from './plugins/auth.js';
 
@@ -22,7 +25,12 @@ export function buildServer({ config, db, logger = false }) {
   app.decorate('posts', createPostRepository(db));
   app.decorate('tags', createTagRepository(db));
 
+  mkdirSync(config.uploadsDir, { recursive: true });
+
   app.register(formbody);
+  app.register(multipart, {
+    limits: { fileSize: config.uploadMaxBytes, files: 1 },
+  });
   app.register(securityPlugin);
   app.register(authPlugin);
 
@@ -49,6 +57,15 @@ export function buildServer({ config, db, logger = false }) {
     maxAge: config.isProduction ? '7d' : 0,
   });
 
+  app.register(fastifyStatic, {
+    root: config.uploadsDir,
+    prefix: '/media/',
+    decorateReply: false,
+    index: false,
+    maxAge: '365d',
+    immutable: true,
+  });
+
   app.setNotFoundHandler((request, reply) =>
     reply.code(404).view('404.eta', { pageTitle: 'Не найдено' }));
 
@@ -72,6 +89,7 @@ export function buildServer({ config, db, logger = false }) {
   app.register(adminAuthRoutes);
   app.register(adminPostRoutes);
   app.register(adminPasswordRoutes);
+  app.register(adminUploadRoutes);
 
   return app;
 }

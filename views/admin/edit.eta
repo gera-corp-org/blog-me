@@ -8,6 +8,7 @@
   <label>Адрес<input type="text" name="slug" value="<%= it.post.slug %>" placeholder="заполнится сам"></label>
   <label>Теги<input type="text" name="tags" value="<%= it.tagsValue %>" placeholder="через запятую"></label>
   <label>Текст<textarea name="body" rows="20" spellcheck="true"><%= it.post.body_md %></textarea></label>
+  <label class="upload">Картинка<input type="file" name="image" accept="image/*" data-upload></label>
   <div class="editor-actions">
     <button type="submit" name="action" value="draft">Сохранить черновик</button>
     <button type="submit" name="action" value="publish">Опубликовать</button>
