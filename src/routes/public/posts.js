@@ -31,4 +31,23 @@ export async function publicPostRoutes(app) {
       tags: app.tags.forPost(post.id),
     });
   });
+
+  app.get('/tag/:slug', async (request, reply) => {
+    const tag = app.tags.findBySlug(request.params.slug);
+    if (!tag) return reply.callNotFound();
+
+    const { page, pages, limit, offset } = paginate({
+      total: app.posts.countByTag(tag.slug),
+      perPage: app.config.postsPerPage,
+      requested: request.query.page,
+    });
+
+    return reply.view('tag.eta', {
+      pageTitle: `Тег «${tag.name}» — ${app.config.siteTitle}`,
+      tag,
+      posts: app.posts.listByTag(tag.slug, { limit, offset }),
+      page,
+      pages,
+    });
+  });
 }

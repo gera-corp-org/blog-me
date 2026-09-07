@@ -1,0 +1,17 @@
+<%~ include('partials/head', it) %>
+<h1>Записи с тегом «<%= it.tag.name %>»</h1>
+<% it.posts.forEach(function (post) { %>
+  <article class="post-card">
+    <h2><a href="/p/<%= post.slug %>"><%= post.title %></a></h2>
+    <p class="meta"><time datetime="<%= post.published_at %>"><%= it.formatDate(post.published_at) %></time></p>
+    <p><%= post.excerpt %></p>
+  </article>
+<% }) %>
+<% if (it.pages > 1) { %>
+  <nav class="pagination">
+    <% if (it.page > 1) { %><a href="/tag/<%= it.tag.slug %>?page=<%= it.page - 1 %>">Новее</a><% } %>
+    <span><%= it.page %> из <%= it.pages %></span>
+    <% if (it.page < it.pages) { %><a href="/tag/<%= it.tag.slug %>?page=<%= it.page + 1 %>">Старее</a><% } %>
+  </nav>
+<% } %>
+<%~ include('partials/foot', it) %>
