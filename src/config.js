@@ -14,7 +14,7 @@ const readBool = (value, fallback) => {
 };
 
 export function loadConfig(env = process.env) {
-  const dataDir = env.DATA_DIR ?? './data';
+  const dataDir = (env.DATA_DIR ?? './data').replace(/\/+$/, '');
   return {
     port: readInt(env.PORT, 3000),
     host: env.HOST ?? '0.0.0.0',

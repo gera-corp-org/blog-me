@@ -27,3 +27,9 @@ test('читает значения из окружения', () => {
   assert.equal(config.cookieSecure, false);
   assert.equal(config.siteUrl, 'https://blog.example.com', 'хвостовой слэш убирается');
 });
+
+test('срезает хвостовой слэш у DATA_DIR', () => {
+  const config = loadConfig({ DATA_DIR: '/data/' });
+  assert.equal(config.databasePath, '/data/blog.db');
+  assert.equal(config.uploadsDir, '/data/uploads');
+});
