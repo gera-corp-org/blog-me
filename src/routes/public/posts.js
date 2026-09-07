@@ -1,12 +1,14 @@
+import { paginate } from '../../domain/pagination.js';
+
 export async function publicPostRoutes(app) {
   app.get('/', async (request, reply) => {
-    const perPage = app.config.postsPerPage;
-    const requested = Number.parseInt(request.query.page ?? '1', 10);
-    const total = app.posts.countPublished();
-    const pages = Math.max(1, Math.ceil(total / perPage));
-    const page = Math.min(Math.max(Number.isFinite(requested) ? requested : 1, 1), pages);
+    const { page, pages, limit, offset } = paginate({
+      total: app.posts.countPublished(),
+      perPage: app.config.postsPerPage,
+      requested: request.query.page,
+    });
 
-    const posts = app.posts.listPublished({ limit: perPage, offset: (page - 1) * perPage });
+    const posts = app.posts.listPublished({ limit, offset });
     const tagsByPost = app.tags.forPosts(posts.map((post) => post.id));
 
     return reply.view('index.eta', {
