@@ -10,6 +10,7 @@ import { formatDate } from './domain/format.js';
 import { publicPostRoutes } from './routes/public/posts.js';
 import { adminAuthRoutes } from './routes/admin/auth.js';
 import { adminPostRoutes } from './routes/admin/posts.js';
+import { adminPasswordRoutes } from './routes/admin/password.js';
 import securityPlugin from './plugins/security.js';
 import authPlugin from './plugins/auth.js';
 
@@ -70,6 +71,7 @@ export function buildServer({ config, db, logger = false }) {
   app.register(publicPostRoutes);
   app.register(adminAuthRoutes);
   app.register(adminPostRoutes);
+  app.register(adminPasswordRoutes);
 
   return app;
 }

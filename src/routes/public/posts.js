@@ -16,12 +16,14 @@ export async function publicPostRoutes(app) {
       posts: posts.map((post) => ({ ...post, tags: tagsByPost.get(post.id) })),
       page,
       pages,
+      user: request.user,
+      csrf: request.csrfToken,
     });
   });
 
   app.get('/p/:slug', async (request, reply) => {
     const post = app.posts.findBySlug(request.params.slug);
-    if (!post || post.status !== 'published') {
+    if (!post || (post.status !== 'published' && !request.user)) {
       return reply.callNotFound();
     }
 
@@ -29,6 +31,8 @@ export async function publicPostRoutes(app) {
       pageTitle: `${post.title} — ${app.config.siteTitle}`,
       post,
       tags: app.tags.forPost(post.id),
+      user: request.user,
+      csrf: request.csrfToken,
     });
   });
 
@@ -48,6 +52,8 @@ export async function publicPostRoutes(app) {
       posts: app.posts.listByTag(tag.slug, { limit, offset }),
       page,
       pages,
+      user: request.user,
+      csrf: request.csrfToken,
     });
   });
 }

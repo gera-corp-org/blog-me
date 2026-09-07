@@ -28,5 +28,6 @@ button { cursor: pointer; }
 .admin-table td { border-bottom: 1px solid rgba(127,127,127,.25); padding: .5rem 0; }
 .filters a { margin-right: 1rem; }
 .error { padding: .6rem .8rem; border-radius: 6px; background: rgba(200,60,60,.14); }
+.notice { padding: .6rem .8rem; border-radius: 6px; background: rgba(60,160,90,.16); }
 .preview { border-top: 1px solid var(--muted); padding-top: 1rem; }
 .admin-links { display: flex; gap: .75rem; align-items: baseline; }

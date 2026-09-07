@@ -5,6 +5,7 @@
   <a href="/admin?status=draft">Черновики</a>
   <a href="/admin?status=published">Опубликованные</a>
   <a href="/admin/posts/new">Новая запись</a>
+  <a href="/admin/password">Пароль</a>
 </p>
 <% if (it.posts.length === 0) { %><p class="empty">Здесь пока пусто.</p><% } %>
 <table class="admin-table">
