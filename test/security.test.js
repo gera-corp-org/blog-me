@@ -26,11 +26,11 @@ test('первый запрос выдаёт ключ CSRF в cookie', async () 
   await cleanup();
 });
 
-test('анонимный запрос не имеет пользователя', async () => {
+test('анонимный запрос не получает ключа сессии', async () => {
   const { app, cleanup } = await createTestApp();
 
   const response = await app.inject({ method: 'GET', url: '/' });
 
-  assert.ok(!response.body.includes('Выйти'));
+  assert.equal(response.cookies.find((cookie) => cookie.name === 'sid'), undefined);
   await cleanup();
 });
