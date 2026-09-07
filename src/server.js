@@ -8,6 +8,8 @@ import { createPostRepository } from './db/posts.js';
 import { createTagRepository } from './db/tags.js';
 import { formatDate } from './domain/format.js';
 import { publicPostRoutes } from './routes/public/posts.js';
+import securityPlugin from './plugins/security.js';
+import authPlugin from './plugins/auth.js';
 
 export function buildServer({ config, db, logger = false }) {
   const app = Fastify({ logger, trustProxy: true });
@@ -18,6 +20,8 @@ export function buildServer({ config, db, logger = false }) {
   app.decorate('tags', createTagRepository(db));
 
   app.register(formbody);
+  app.register(securityPlugin);
+  app.register(authPlugin);
 
   app.register(fastifyView, {
     engine: { eta: new Eta({ views: config.viewsDir, cache: config.isProduction }) },
