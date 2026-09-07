@@ -13,7 +13,7 @@ import securityPlugin from './plugins/security.js';
 import authPlugin from './plugins/auth.js';
 
 export function buildServer({ config, db, logger = false }) {
-  const app = Fastify({ logger, trustProxy: config.trustProxyHops });
+  const app = Fastify({ logger, trustProxy: config.trustProxy });
 
   app.decorate('config', config);
   app.decorate('db', db);

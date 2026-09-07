@@ -8,6 +8,13 @@ const readInt = (value, fallback) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+// Пустой список означает «не верить заголовку ни от кого»: Fastify ждёт
+// здесь false, а не пустой массив.
+const readList = (value, fallback) => {
+  const entries = String(value ?? fallback).split(',').map((entry) => entry.trim()).filter(Boolean);
+  return entries.length > 0 ? entries : false;
+};
+
 const readBool = (value, fallback) => {
   if (value === undefined) return fallback;
   return value === 'true' || value === '1';
@@ -18,11 +25,14 @@ export function loadConfig(env = process.env) {
   return {
     port: readInt(env.PORT, 3000),
     host: env.HOST ?? '0.0.0.0',
-    // Сколько прокси перед приложением заслуживают доверия. По умолчанию
-    // один — ingress кластера. Значение true доверяло бы всей цепочке, и
-    // тогда клиент подделал бы свой адрес заголовком, обойдя ограничение
-    // попыток входа.
-    trustProxyHops: readInt(env.TRUST_PROXY_HOPS, 1),
+    // Кому верить, когда заголовок X-Forwarded-For называет адрес
+    // посетителя. Заголовок принимается, только если сосед по соединению
+    // сам входит в этот список, поэтому умолчание безопасно и за ingress
+    // кластера (он в частной сети), и при прямом доступе из интернета
+    // (там сосед — публичный адрес, и заголовку не верят). Число сюда
+    // передавать бесполезно: Fastify намеренно не поддерживает доверие
+    // «по числу узлов», потому что оно не проверяет самого соседа.
+    trustProxy: readList(env.TRUST_PROXY, 'loopback,uniquelocal'),
     isProduction: env.NODE_ENV === 'production',
 
     dataDir,

@@ -10,7 +10,7 @@ test('подставляет значения по умолчанию', () => {
   assert.equal(config.backupKeep, 7);
   assert.equal(config.cookieSecure, true);
   assert.equal(config.databasePath, './data/blog.db');
-  assert.equal(config.trustProxyHops, 1);
+  assert.deepEqual(config.trustProxy, ['loopback', 'uniquelocal'], 'по умолчанию доверяем петле и частным сетям');
 });
 
 test('читает значения из окружения', () => {
@@ -20,7 +20,7 @@ test('читает значения из окружения', () => {
     POSTS_PER_PAGE: '5',
     COOKIE_SECURE: 'false',
     SITE_URL: 'https://blog.example.com/',
-    TRUST_PROXY_HOPS: '2',
+    TRUST_PROXY: '10.0.0.0/8, 192.168.0.0/16',
   });
   assert.equal(config.port, 8080);
   assert.equal(config.databasePath, '/data/blog.db');
@@ -28,11 +28,18 @@ test('читает значения из окружения', () => {
   assert.equal(config.postsPerPage, 5);
   assert.equal(config.cookieSecure, false);
   assert.equal(config.siteUrl, 'https://blog.example.com', 'хвостовой слэш убирается');
-  assert.equal(config.trustProxyHops, 2);
+  assert.deepEqual(config.trustProxy, ['10.0.0.0/8', '192.168.0.0/16'], 'список разбирается по запятой, пробелы срезаются');
 });
 
 test('срезает хвостовой слэш у DATA_DIR', () => {
   const config = loadConfig({ DATA_DIR: '/data/' });
   assert.equal(config.databasePath, '/data/blog.db');
   assert.equal(config.uploadsDir, '/data/uploads');
+});
+
+test('пустой TRUST_PROXY отключает доверие заголовку', () => {
+  // Fastify ждёт здесь именно false: пустой массив он принял бы за список
+  // и продолжил бы разбирать заголовок.
+  assert.equal(loadConfig({ TRUST_PROXY: '' }).trustProxy, false);
+  assert.equal(loadConfig({ TRUST_PROXY: ' , ' }).trustProxy, false);
 });

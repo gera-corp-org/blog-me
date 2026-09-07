@@ -67,6 +67,61 @@ test('после десяти неудач вход отвечает 429', async
   await cleanup();
 });
 
+test('заголовку доверенного прокси верят: попытки считаются по разным адресам', async () => {
+  // Умолчание доверяет loopback, а в тестах сосед по соединению — 127.0.0.1.
+  // Значит заголовок принимается, и одиннадцать попыток с одиннадцати
+  // разных адресов не должны упереться в предел, рассчитанный на один.
+  const { app, cleanup } = await createTestApp();
+  app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
+  const page = await app.inject({ method: 'GET', url: '/admin/login' });
+  const csrf = page.cookies.find((cookie) => cookie.name === 'csrf').value;
+  const codes = [];
+
+  for (let index = 1; index <= 11; index += 1) {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/admin/login',
+      headers: {
+        cookie: `csrf=${csrf}`,
+        'content-type': 'application/x-www-form-urlencoded',
+        'x-forwarded-for': `203.0.113.${index}`,
+      },
+      payload: new URLSearchParams({ username: TEST_USER.username, password: 'не тот', _csrf: csrf }).toString(),
+    });
+    codes.push(response.statusCode);
+  }
+
+  assert.ok(!codes.includes(429), `предел сработал на разных адресах: ${codes.join(',')}`);
+  await cleanup();
+});
+
+test('заголовку от недоверенного клиента не верят: подделка адреса не обходит предел', async () => {
+  // Здесь доверенной объявлена чужая сеть, поэтому 127.0.0.1 недоверенный и
+  // его заголовок игнорируется — все попытки считаются как один клиент.
+  const { app, cleanup } = await createTestApp({ TRUST_PROXY: '10.0.0.0/8' });
+  app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
+  const page = await app.inject({ method: 'GET', url: '/admin/login' });
+  const csrf = page.cookies.find((cookie) => cookie.name === 'csrf').value;
+  const codes = [];
+
+  for (let index = 1; index <= 11; index += 1) {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/admin/login',
+      headers: {
+        cookie: `csrf=${csrf}`,
+        'content-type': 'application/x-www-form-urlencoded',
+        'x-forwarded-for': `203.0.113.${index}`,
+      },
+      payload: new URLSearchParams({ username: TEST_USER.username, password: 'не тот', _csrf: csrf }).toString(),
+    });
+    codes.push(response.statusCode);
+  }
+
+  assert.equal(codes[10], 429, `подделка адреса обошла предел: ${codes.join(',')}`);
+  await cleanup();
+});
+
 test('приманка готова до первого запроса', () => {
   // Прямая проверка вместо замера: если считать приманку лениво, первый
   // вход с несуществующим логином сделает два вычисления хеша и окажется
