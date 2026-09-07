@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestApp, login, form, TEST_USER } from './helpers/app.js';
+import { DECOY_PASSWORD_HASH } from '../src/routes/admin/auth.js';
 import { hashPassword } from '../src/domain/password.js';
 import { ensureAdminUser } from '../src/bootstrap.js';
 
@@ -66,7 +67,14 @@ test('после десяти неудач вход отвечает 429', async
   await cleanup();
 });
 
-test('время ответа не выдаёт, существует ли логин', async () => {
+test('приманка готова до первого запроса', () => {
+  // Прямая проверка вместо замера: если считать приманку лениво, первый
+  // вход с несуществующим логином сделает два вычисления хеша и окажется
+  // вдвое дольше — а замеры разовую задержку не ловят.
+  assert.match(DECOY_PASSWORD_HASH, /^scrypt\$\d+\$\d+\$\d+\$/);
+});
+
+test('в установившемся режиме время ответа не зависит от существования логина', async () => {
   const { app, cleanup } = await createTestApp();
   app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
   const page = await app.inject({ method: 'GET', url: '/admin/login' });

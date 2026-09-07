@@ -8,19 +8,14 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 // Хеш случайного пароля, с которым сверяется несуществующий пользователь:
 // сверка стоит столько же времени, сколько настоящая, и по длительности
 // ответа нельзя отличить «нет такого логина» от «неверный пароль».
-let decoy;
-async function decoyHash() {
-  decoy ??= await hashPassword(randomBytes(32).toString('hex'));
-  return decoy;
-}
+// Считается при загрузке модуля, а не в первом запросе: иначе именно этот
+// первый запрос сделает два вычисления хеша вместо одного и выдаст себя.
+// Экспортируется, чтобы готовность приманки проверялась тестом прямо, а не
+// замером времени — разовую задержку замеры надёжно поймать не могут.
+export const DECOY_PASSWORD_HASH = await hashPassword(randomBytes(32).toString('hex'));
 
 export async function adminAuthRoutes(app) {
   const limiter = createRateLimiter({ limit: LOGIN_LIMIT, windowMs: LOGIN_WINDOW_MS });
-
-  // Приманка считается при регистрации, а не в первом запросе: иначе этот
-  // первый запрос сделает два вычисления хеша вместо одного и окажется
-  // заметно дольше — ровно та разница во времени, которую мы прячем.
-  await decoyHash();
 
   const loginPage = (request, reply, { code = 200, error = null, username = '' } = {}) =>
     reply.code(code).view('admin/login.eta', {
@@ -51,7 +46,7 @@ export async function adminAuthRoutes(app) {
     // Пароль проверяется даже когда такого пользователя нет: иначе быстрый
     // ответ выдаёт, что логин не существует, и его можно перебрать.
     const user = app.users.findByUsername(username);
-    const correct = await verifyPassword(password, user?.password_hash ?? (await decoyHash()));
+    const correct = await verifyPassword(password, user?.password_hash ?? DECOY_PASSWORD_HASH);
 
     if (!user || !correct) {
       return loginPage(request, reply, {
