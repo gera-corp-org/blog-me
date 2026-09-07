@@ -17,7 +17,8 @@ export function buildServer({ config, db, logger = false }) {
       }
       app.db.prepare('SELECT 1').get();
       return { status: 'ok' };
-    } catch {
+    } catch (error) {
+      request.log.error(error, 'проба готовности: база недоступна');
       return reply.code(503).send({ status: 'база недоступна' });
     }
   });
