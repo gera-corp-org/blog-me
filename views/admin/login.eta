@@ -1,0 +1,10 @@
+<%~ include('/partials/head', it) %>
+<h1>Вход</h1>
+<% if (it.error) { %><p class="error"><%= it.error %></p><% } %>
+<form method="post" action="/admin/login" class="form">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <label>Логин<input type="text" name="username" value="<%= it.username %>" autocomplete="username" required autofocus></label>
+  <label>Пароль<input type="password" name="password" autocomplete="current-password" required></label>
+  <button type="submit">Войти</button>
+</form>
+<%~ include('/partials/foot', it) %>

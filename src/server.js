@@ -8,6 +8,7 @@ import { createPostRepository } from './db/posts.js';
 import { createTagRepository } from './db/tags.js';
 import { formatDate } from './domain/format.js';
 import { publicPostRoutes } from './routes/public/posts.js';
+import { adminAuthRoutes } from './routes/admin/auth.js';
 import securityPlugin from './plugins/security.js';
 import authPlugin from './plugins/auth.js';
 
@@ -36,6 +37,7 @@ export function buildServer({ config, db, logger = false }) {
       formatDate,
       q: '',
       user: null,
+      csrf: '',
     },
   });
 
@@ -65,6 +67,7 @@ export function buildServer({ config, db, logger = false }) {
   });
 
   app.register(publicPostRoutes);
+  app.register(adminAuthRoutes);
 
   return app;
 }

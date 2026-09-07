@@ -13,5 +13,14 @@
       <form class="search-form" action="/search" method="get" role="search">
         <input type="search" name="q" value="<%= it.q %>" placeholder="Поиск" aria-label="Поиск по записям">
       </form>
+      <% if (it.user) { %>
+        <span class="admin-links">
+          <a href="/admin">Записи</a>
+          <form method="post" action="/admin/logout" class="inline-form">
+            <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+            <button type="submit" class="link-button">Выйти</button>
+          </form>
+        </span>
+      <% } %>
     </header>
     <main>
