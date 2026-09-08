@@ -52,11 +52,19 @@ ingress, и ограничение попыток превратится в об
 ## Развёртывание
 
     docker build -t gera-blog:1.0.0 .
+    kubectl apply -k deploy/k8s
     kubectl -n blog create secret generic blog-secrets \
       --from-literal=SESSION_SECRET="$(openssl rand -hex 32)" \
       --from-literal=ADMIN_USERNAME=gera \
       --from-literal=ADMIN_PASSWORD='пароль'
-    kubectl apply -k deploy/k8s
+
+Пространство имён `blog` создаётся самим `kubectl apply -k deploy/k8s`,
+поэтому секрет заводится после применения манифестов, а не до — иначе
+команда упадёт с «namespaces "blog" not found».
+
+Образ собран локально и не отправляется в реестр: тег `gera-blog:1.0.0`
+из манифеста должен быть доступен узлам кластера — либо собран прямо на
+узле, либо отправлен в реестр, который эти узлы видят.
 
 Реплика всегда одна: SQLite и том RWO не допускают двух писателей.
 
