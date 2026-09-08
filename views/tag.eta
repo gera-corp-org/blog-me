@@ -1,11 +1,7 @@
 <%~ include('partials/head', it) %>
 <h1>Записи с тегом «<%= it.tag.name %>»</h1>
 <% it.posts.forEach(function (post) { %>
-  <article class="post-card">
-    <h2><a href="/p/<%= post.slug %>"><%= post.title %></a></h2>
-    <p class="meta"><time datetime="<%= post.published_at %>"><%= it.formatDate(post.published_at) %></time></p>
-    <p><%= post.excerpt %></p>
-  </article>
+  <%~ include('/partials/post-card', { post, formatDate: it.formatDate }) %>
 <% }) %>
 <% if (it.pages > 1) { %>
   <nav class="pagination">

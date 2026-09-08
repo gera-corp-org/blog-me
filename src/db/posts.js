@@ -84,5 +84,13 @@ export function createPostRepository(db) {
                   JOIN tags t ON t.id = pt.tag_id
                   WHERE t.slug = ? AND p.status = 'published'`).get(tagSlug).total;
     },
+
+    search(match, { limit }) {
+      if (!match) return [];
+      return sql(`SELECT ${PREFIXED} FROM posts p
+                  JOIN posts_fts ON posts_fts.rowid = p.id
+                  WHERE posts_fts MATCH ? AND p.status = 'published'
+                  ORDER BY rank LIMIT ?`).all(match, limit);
+    },
   };
 }

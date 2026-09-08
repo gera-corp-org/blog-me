@@ -1,0 +1,8 @@
+<article class="post-card">
+  <h2><a href="/p/<%= it.post.slug %>"><%= it.post.title %></a></h2>
+  <p class="meta"><time datetime="<%= it.post.published_at %>"><%= it.formatDate(it.post.published_at) %></time></p>
+  <p><%= it.post.excerpt %></p>
+  <% if (it.tags && it.tags.length > 0) { %>
+    <p class="tags"><% it.tags.forEach(function (tag) { %><a class="tag" href="/tag/<%= tag.slug %>">#<%= tag.name %></a> <% }) %></p>
+  <% } %>
+</article>
