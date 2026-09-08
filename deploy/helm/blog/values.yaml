@@ -9,7 +9,8 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/gera-corp-org/blog-me
-  tag: latest
+  # empty = falls back to appVersion from Chart.yaml (release version)
+  tag: ""
   pullPolicy: IfNotPresent
 
 # Namespace. true — the chart creates the Namespace itself (as kustomize did).
