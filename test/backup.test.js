@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createTestDatabase } from './helpers/db.js';
 import { openDatabase } from '../src/db/index.js';
@@ -39,6 +39,36 @@ test('оставляет только заданное число снимков
   makeBackup(db, backups, 2, new Date('2026-09-03T00:00:00.000Z'));
 
   assert.deepEqual(readdirSync(backups).sort(), ['blog-2026-09-02.db', 'blog-2026-09-03.db']);
+  cleanup();
+});
+
+test('каталог с именем снимка не ломает ротацию', () => {
+  const { db, dir, cleanup } = createTestDatabase();
+  const backups = join(dir, 'backups');
+  // Такой каталог мог остаться от чужого инструмента. Раньше он вставал
+  // первым в очередь на удаление, ротация падала и не двигалась никогда.
+  mkdirSync(join(backups, 'blog-2020-01-01.db'), { recursive: true });
+
+  const file = makeBackup(db, backups, 1, new Date('2026-09-07T12:00:00.000Z'));
+
+  assert.ok(existsSync(file), 'снимок не создан');
+  assert.ok(existsSync(join(backups, 'blog-2020-01-01.db')), 'посторонний каталог тронут');
+  cleanup();
+});
+
+test('обрывок прерванного снимка не занимает имя годного', () => {
+  const { db, dir, cleanup } = createTestDatabase();
+  const backups = join(dir, 'backups');
+  mkdirSync(backups, { recursive: true });
+  // Так выглядит файл, оставшийся от снимка, прерванного на середине.
+  writeFileSync(join(backups, 'blog-2026-09-07.db.tmp'), 'обрывок');
+
+  makeBackup(db, backups, 7, new Date('2026-09-07T12:00:00.000Z'));
+
+  assert.deepEqual(readdirSync(backups), ['blog-2026-09-07.db'], 'обрывок остался в каталоге');
+  const copy = openDatabase(join(backups, 'blog-2026-09-07.db'));
+  assert.equal(copy.prepare('SELECT COUNT(*) AS total FROM posts').get().total, 0);
+  copy.close();
   cleanup();
 });
 
