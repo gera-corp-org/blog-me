@@ -66,6 +66,24 @@ test('лента отдаёт только опубликованные, нов�
   cleanup();
 });
 
+test('при совпадении времени публикации порядок в ленте определён', () => {
+  // У поиска такой тест уже есть, у ленты — нет, хотя вторичный ключ
+  // сортировки (id DESC) в запросе тоже есть. Здесь совпадение по времени
+  // подстроено намеренно: две записи, созданные в одну миллисекунду в
+  // реальности, вели бы себя точно так же.
+  const { db, cleanup } = createTestDatabase();
+  const posts = createPostRepository(db);
+  const first = posts.create(fields({ slug: 'first', status: 'published' }));
+  const second = posts.create(fields({ slug: 'second', status: 'published' }));
+  db.prepare('UPDATE posts SET published_at = ? WHERE id IN (?, ?)')
+    .run(first.published_at, first.id, second.id);
+
+  const list = posts.listPublished({ limit: 10, offset: 0 });
+
+  assert.deepEqual(list.map((post) => post.slug), ['second', 'first'], 'новая запись должна идти первой');
+  cleanup();
+});
+
 test('постраничность режет выдачу', () => {
   const { db, cleanup } = createTestDatabase();
   const posts = createPostRepository(db);

@@ -56,6 +56,21 @@ test('страница записи отдаёт разметку тела', asy
   await cleanup();
 });
 
+test('заголовок с разметкой и кавычками выводится экранированным', async () => {
+  // Ничто сейчас не проверяет экранирование: переключение любого вывода
+  // на сырой (<%~ вместо <%=) прошло бы незамеченным.
+  const dangerousTitle = 'Заголовок <script>alert(1)</script> и "кавычки"';
+  const { app, cleanup } = await createTestApp();
+  seedPost(app, { title: dangerousTitle, slug: 'opasnaya-zapis' });
+
+  for (const url of ['/p/opasnaya-zapis', '/']) {
+    const response = await app.inject({ method: 'GET', url });
+    assert.ok(!response.body.includes('<script>alert(1)'), `сырой скрипт в ответе на ${url}`);
+    assert.ok(response.body.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), `заголовок не экранирован на ${url}`);
+  }
+  await cleanup();
+});
+
 test('черновик анониму не показывается', async () => {
   const { app, cleanup } = await createTestApp();
   seedPost(app, { title: 'Черновик', slug: 'chernovik', status: 'draft' });
