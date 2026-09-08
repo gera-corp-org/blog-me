@@ -1,0 +1,4 @@
+CREATE TABLE page_views (
+  path  TEXT PRIMARY KEY,
+  views INTEGER NOT NULL DEFAULT 0
+);

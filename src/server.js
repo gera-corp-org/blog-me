@@ -17,8 +17,10 @@ import { adminAuthRoutes } from './routes/admin/auth.js';
 import { adminPostRoutes } from './routes/admin/posts.js';
 import { adminPasswordRoutes } from './routes/admin/password.js';
 import { adminUploadRoutes } from './routes/admin/upload.js';
+import { adminStatsRoutes } from './routes/admin/stats.js';
 import securityPlugin from './plugins/security.js';
 import authPlugin from './plugins/auth.js';
+import pageViewsPlugin from './plugins/pageViews.js';
 
 const ERROR_MESSAGES = {
   400: 'Некорректный запрос',
@@ -45,6 +47,7 @@ export function buildServer({ config, db, logger = false }) {
   });
   app.register(securityPlugin);
   app.register(authPlugin);
+  app.register(pageViewsPlugin);
 
   app.register(fastifyView, {
     engine: { eta: new Eta({ views: config.viewsDir, cache: config.isProduction }) },
@@ -57,6 +60,7 @@ export function buildServer({ config, db, logger = false }) {
         author: config.siteAuthor,
       },
       formatDate,
+      totalViews: () => app.pageViews.total(),
       q: '',
       user: null,
       csrf: '',
@@ -120,6 +124,7 @@ export function buildServer({ config, db, logger = false }) {
   app.register(adminPostRoutes);
   app.register(adminPasswordRoutes);
   app.register(adminUploadRoutes);
+  app.register(adminStatsRoutes);
 
   return app;
 }

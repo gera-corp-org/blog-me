@@ -6,6 +6,7 @@
   <a href="/admin?status=published">Опубликованные</a>
   <a href="/admin/posts/new">Новая запись</a>
   <a href="/admin/password">Пароль</a>
+  <a href="/admin/stats">Статистика</a>
 </p>
 <% if (it.posts.length === 0) { %><p class="empty">Здесь пока пусто.</p><% } %>
 <table class="admin-table">

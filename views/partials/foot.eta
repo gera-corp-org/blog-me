@@ -2,6 +2,7 @@
     <footer class="site-footer">
       <p><%= it.site.description %></p>
       <p><a href="/feed.xml">Подписка</a></p>
+      <p>Просмотров: <%= it.totalViews() %></p>
     </footer>
   </body>
 </html>

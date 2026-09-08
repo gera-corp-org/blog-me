@@ -1,0 +1,16 @@
+<%~ include('/partials/head', it) %>
+<h1>Статистика</h1>
+<p>Всего просмотров: <strong><%= it.total %></strong></p>
+<% if (it.stats.length === 0) { %>
+  <p class="empty">Просмотров пока нет.</p>
+<% } else { %>
+  <table class="admin-table">
+    <% it.stats.forEach(function (row) { %>
+      <tr>
+        <td><%= row.label %></td>
+        <td><%= row.views %></td>
+      </tr>
+    <% }) %>
+  </table>
+<% } %>
+<%~ include('/partials/foot', it) %>
