@@ -52,7 +52,7 @@ views/         шаблоны страниц
 migrations/    SQL-файлы миграций по номерам
 public/        стили и статические файлы
 test/          тесты
-deploy/        Dockerfile и манифесты Kubernetes
+deploy/helm/   Helm-чарт для Kubernetes
 ```
 
 ### 4.2 Границы слоёв
@@ -207,21 +207,36 @@ glibc, а не alpine, выбрано сознательно: у драйвер�
 Стадия сборки ставит зависимости, финальная копирует только рабочие,
 процесс запускается не от root.
 
-### 8.2 Манифесты (`deploy/k8s/`)
+### 8.2 Helm-чарт (`deploy/helm/blog/`)
+
+Развёртывание оформлено Helm-чартом. Значения по умолчанию в
+`values.yaml`, шаблоны в `templates/` (Deployment, Service, Ingress,
+PersistentVolumeClaim, ConfigMap, Secret, Namespace).
 
 - `Deployment`: 1 реплика, `strategy: Recreate`. Две реплики повредили бы
   базу, а том RWO всё равно не смонтировался бы дважды.
-- `PersistentVolumeClaim`: доступ RWO, 10 Gi, класс хранилища кластера.
-- `Service`: ClusterIP.
-- `Ingress`: домен блога, TLS.
-- `Secret`: `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `SESSION_SECRET`.
-- `ConfigMap`: название сайта, описание, адрес, размер страницы.
+- `PersistentVolumeClaim`: доступ RWO, 10 Gi, класс хранилища из
+  `persistence.storageClassName`.
+- `Service`: ClusterIP, порт 80 → 3000.
+- `Ingress`: домен блога (`ingress.host`), TLS (`ingress.tls`), класс
+  nginx. Аннотация cert-manager закомментирована.
+- `ConfigMap`: название сайта, описание, адрес, размер страницы и
+  остальные переменные раздела 8.3, кроме секретов.
+- `Secret`: `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`.
+  В репозитории паролей нет: значения пустые в `values.yaml` и
+  передаются при установке (`--set secrets.sessionSecret=...`), либо
+  подключается готовый Secret через `secrets.existingSecret`.
 - Пробы: `/healthz` — liveness, `/readyz` — readiness. Readiness
   отвечает «готов» только после применения миграций, чтобы трафик не
   пришёл в недомигрированную базу.
 - Ресурсы: запрос 100m CPU и 256 Mi памяти, предел 500m и 512 Mi.
 - `securityContext`: не root, корневая файловая система только на
   чтение, запись разрешена в `/data` и `/tmp`, привилегии сброшены.
+
+Установка:
+
+    helm install blog ./deploy/helm/blog -n blog --create-namespace \
+      --set secrets.sessionSecret=... --set secrets.adminPassword=...
 
 ### 8.3 Переменные окружения
 
