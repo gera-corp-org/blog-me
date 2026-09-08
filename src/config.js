@@ -21,7 +21,10 @@ const readBool = (value, fallback) => {
 };
 
 export function loadConfig(env = process.env) {
-  const dataDir = (env.DATA_DIR ?? './data').replace(/\/+$/, '');
+  // Путь приводится к абсолютному: библиотека отдачи файлов требует именно
+  // такой и роняет приложение при старте, а значение по умолчанию —
+  // относительное. resolve заодно убирает хвостовые слэши.
+  const dataDir = resolve(env.DATA_DIR ?? './data');
   return {
     port: readInt(env.PORT, 3000),
     host: env.HOST ?? '0.0.0.0',
