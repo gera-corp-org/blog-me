@@ -8,7 +8,11 @@
     npm install
     npm test
     DATA_DIR=./data COOKIE_SECURE=false \
-      ADMIN_USERNAME=gera ADMIN_PASSWORD=пароль12345 npm run dev
+      ADMIN_USERNAME=gera ADMIN_PASSWORD='придумайте-пароль' npm run dev
+
+Пароль из этой команды создаёт пользователя в локальной базе при первом
+запуске, поэтому подставьте свой, а не оставляйте пример: иначе логин и
+пароль вашего блога будут написаны в открытом файле репозитория.
 
 Открыть http://localhost:3000, войти на /admin/login.
 
