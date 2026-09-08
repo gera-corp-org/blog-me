@@ -32,3 +32,24 @@ button { cursor: pointer; }
 .preview { border-top: 1px solid var(--muted); padding-top: 1rem; }
 .admin-links { display: flex; gap: .75rem; align-items: baseline; }
 .upload { font-size: .9rem; color: var(--muted); }
+h1, h2, h3 { line-height: 1.25; }
+.post-body h2 { margin-top: 2rem; }
+.post-body blockquote { margin: 1.5rem 0; padding-left: 1rem; border-left: 3px solid var(--muted); color: var(--muted); }
+.post-body table { width: 100%; border-collapse: collapse; }
+.post-body td, .post-body th { border-bottom: 1px solid rgba(127,127,127,.25); padding: .4rem; text-align: left; }
+.post-body code { padding: .1rem .3rem; border-radius: 4px; background: rgba(127,127,127,.15); font-size: .95em; }
+.post-body pre code { padding: 0; background: none; }
+.empty { color: var(--muted); }
+.search-form input { min-width: 8rem; }
+
+@media (max-width: 34rem) {
+  body { padding: 1rem .8rem 3rem; font-size: 1rem; }
+  .site-header { flex-direction: column; align-items: flex-start; gap: .6rem; }
+  .search-form input { width: 100%; }
+  .editor-actions { flex-direction: column; align-items: stretch; }
+}
+
+@media print {
+  .site-header, .site-footer, .pagination { display: none; }
+  body { max-width: none; }
+}
