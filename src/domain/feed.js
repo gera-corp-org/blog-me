@@ -1,9 +1,9 @@
 const REPLACEMENTS = { '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' };
 
-// XML 1.0 запрещает почти все управляющие символы. Один такой байт, попавший
-// в заголовок из буфера обмена, делает нечитаемым весь документ, а не одну
-// запись, — поэтому вырезаем их до экранирования. Разрешены только
-// табуляция, перевод строки и возврат каретки.
+// XML 1.0 forbids almost all control characters. A single such byte pasted into
+// a title from the clipboard makes the whole document unreadable, not just one
+// entry — so we strip them before escaping. Only tab, newline and carriage
+// return are allowed.
 const FORBIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g;
 
 function escapeXml(value) {

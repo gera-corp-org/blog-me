@@ -31,9 +31,9 @@ test('ссылки в ленте абсолютные', () => {
 });
 
 test('в документе не остаётся ничего, что ломает разбор', () => {
-  // Готового разборщика XML в Node нет, поэтому проверяем два свойства, из
-  // которых и складывается пригодность документа к разбору: не осталось
-  // запрещённых управляющих символов и нет ни одного амперсанда вне сущности.
+  // Node has no built-in XML parser, so we check two properties, from
+  // which a document's parsability is made up: no forbidden control
+  // characters remain, and there is not a single ampersand outside of an entity.
   const xml = buildAtomFeed({
     site: { ...site, title: 'Блог & <Ко>', author: 'Гера "Г"' },
     posts: [{

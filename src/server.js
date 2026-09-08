@@ -81,10 +81,10 @@ export function buildServer({ config, db, logger = false }) {
   app.setNotFoundHandler((request, reply) =>
     reply.code(404).view('404.eta', { pageTitle: 'Не найдено' }));
 
-  // Тела ошибок пишем сами: сообщения библиотек приходят по-английски и
-  // могут содержать пути на сервере. Наружу уходит код и короткая русская
-  // строка, подробности — в лог. Браузер узнаём по заголовку Accept:
-  // переходу по ссылке отдаём страницу, запросу из редактора — JSON.
+  // We write error bodies ourselves: library messages arrive in English and may
+  // contain server paths. The code and a short Russian string go out; the details
+  // go to the log. The browser is detected via the Accept header: a link
+  // navigation gets a page, a request from the editor gets JSON.
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);
     const status = error.statusCode >= 400 && error.statusCode < 500 ? error.statusCode : 500;

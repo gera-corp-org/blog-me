@@ -12,8 +12,8 @@ export async function adminUploadRoutes(app) {
     try {
       buffer = await file.toBuffer();
     } catch (error) {
-      // Разбираем именно превышение размера: сплошной catch выдавал бы
-      // «файл слишком большой» и на посторонние сбои, вводя в заблуждение.
+      // We specifically handle the size limit: a blanket catch would also report
+      // "file too large" on unrelated failures, which is misleading.
       if (error.code === 'FST_REQ_FILE_TOO_LARGE') {
         return reply.code(413).send({ error: 'Файл слишком большой' });
       }
@@ -40,8 +40,8 @@ export async function adminUploadRoutes(app) {
       mkdirSync(dirname(target), { recursive: true });
       if (!existsSync(target)) writeFileSync(target, buffer);
     } catch (error) {
-      // Наружу — короткая русская строка, подробности с путями на сервере
-      // остаются в логе: они говорят об устройстве машины больше, чем нужно.
+      // Outward goes a short Russian string; the details with server paths stay
+      // in the log: they reveal more about the machine's layout than necessary.
       request.log.error(error, 'не удалось сохранить картинку');
       return reply.code(500).send({ error: 'Не удалось сохранить картинку' });
     }

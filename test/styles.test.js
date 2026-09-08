@@ -28,9 +28,9 @@ test('страницы не содержат встроенных стилей �
     const response = await app.inject({ method: 'GET', url, headers });
     assert.ok(!response.body.includes('style="'), `встроенный стиль на ${url}`);
     assert.ok(!response.body.includes('<style'), `блок стилей на ${url}`);
-    // Политика безопасности запрещает встроенные обработчики событий:
-    // атрибут вида onsubmit="..." молча не выполняется браузером, и
-    // единственная защита (например, подтверждение удаления) пропадает.
+    // The security policy forbids inline event handlers:
+    // an attribute like onsubmit="..." is silently not executed by the browser, and
+    // the only protection (e.g. delete confirmation) disappears.
     assert.ok(!/\son\w+\s*=/i.test(response.body), `встроенный обработчик события на ${url}`);
   }
   await cleanup();

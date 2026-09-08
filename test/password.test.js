@@ -21,9 +21,9 @@ test('каждый хеш имеет свою соль', async () => {
 });
 
 test('подтверждает пароль, захешированный со старыми параметрами', async () => {
-  // Хеш сделан с N=1024 вместо нынешних 16384. Проверка обязана читать
-  // параметры из самой строки, иначе смена параметров обесценит все
-  // сохранённые пароли.
+  // The hash uses N=1024 instead of the current 16384. The check must read
+  // the parameters from the string itself, otherwise changing them would invalidate all
+  // stored passwords.
   const salt = randomBytes(16);
   const key = await promisify(scryptCallback)('пароль', salt, 64, { N: 1024, r: 8, p: 1 });
   const stored = ['scrypt', 1024, 8, 1, salt.toString('base64'), key.toString('base64')].join('$');

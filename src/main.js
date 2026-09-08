@@ -25,8 +25,8 @@ if (config.isProduction && config.sessionSecret === 'небезопасный-к
 
 await app.ready();
 await ensureAdminUser({ users: app.users, config, log: app.log });
-// Снимок базы и чистка просроченных сессий идут одним расписанием: оба
-// нужны при старте и раз в сутки, второй таймер был бы лишним.
+// The database snapshot and the expired-session cleanup share one schedule: both
+// are needed at startup and once a day, so a second timer would be redundant.
 startBackupSchedule({ db, sessions: app.sessions, config, log: app.log });
 
 try {

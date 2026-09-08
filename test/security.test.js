@@ -26,9 +26,9 @@ test('первый запрос выдаёт ключ CSRF в cookie, ключ �
   assert.equal(csrf.httpOnly, true);
   assert.equal(csrf.sameSite, 'Lax');
 
-  // Ключ подписан тем же секретом, что и cookie сессии: значение в cookie —
-  // не сам ключ, а подпись поверх него, иначе подделка cookie соседним
-  // поддоменом ничем не отличалась бы от настоящего ключа.
+  // The key is signed with the same secret as the session cookie: the cookie value is
+  // not the key itself, but a signature over it — otherwise forging the cookie by a neighboring
+  // subdomain would be indistinguishable from the real key.
   const unsigned = unsign(csrf.value, config.sessionSecret);
   assert.equal(unsigned.valid, true, 'подпись ключа CSRF не сходится');
   assert.equal(unsigned.value.length, 64);
@@ -38,8 +38,8 @@ test('первый запрос выдаёт ключ CSRF в cookie, ключ �
 test('испорченный ключ CSRF не проходит подпись и блокирует запись', async () => {
   const { app, cleanup } = await createTestApp();
   const { cookie, csrf } = await login(app);
-  // Подменяем пару символов в подписанном значении cookie — как будто её
-  // подделал сосед, не знающий секрета подписи.
+  // We swap a couple of characters in the signed cookie value — as if a
+  // neighbor who doesn't know the signing secret had forged it.
   const brokenCookie = cookie.replace(/(csrf=)([^;]+)/, (_, prefix, value) => {
     const chars = value.split('');
     const middle = Math.floor(chars.length / 2);

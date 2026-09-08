@@ -117,7 +117,7 @@ test('правка без смены адреса не подставляет н
     ...post(cookie, { title: 'Заметка', slug: 'zametka', tags: '', body: 'Другой текст', action: 'draft', _csrf: csrf }),
   });
 
-  // Собственный слаг записи не должен считаться занятым ею же.
+  // A post's own slug must not be treated as taken by itself.
   assert.equal(app.posts.findById(existing.id).slug, 'zametka');
   await cleanup();
 });
@@ -141,9 +141,9 @@ test('удаление убирает запись', async () => {
 test('превью возвращает тот же HTML, что реально сохраняется при публикации', async () => {
   const { app, cleanup } = await createTestApp();
   const { cookie, csrf } = await login(app);
-  // В одном исходнике сразу разметка, типографика и вставленный скрипт:
-  // сравнение по подстроке пропустило бы подмену разборщика превью на
-  // другой, без санитайзера, — здесь так подменить незаметно не выйдет.
+  // A single source holds markup, typography, and an injected script at once:
+  // substring comparison would miss swapping the preview parser for
+  // another one without a sanitizer — here such a swap can't go unnoticed.
   const bodyMd = 'Текст со **сноской** (c) 2026 -- пример... <script>alert(1)</script>';
 
   const created = await app.inject({
@@ -163,8 +163,8 @@ test('превью возвращает тот же HTML, что реально 
   });
 
   assert.equal(preview.statusCode, 200);
-  // Убеждаемся, что сравнение вообще что-то различает: в сохранённом теле
-  // есть и разметка, и типографика, а скрипт вырезан.
+  // Make sure the comparison distinguishes anything at all: the stored body
+  // contains both markup and typography, while the script is stripped out.
   assert.match(saved.body_html, /<strong>сноской<\/strong>/);
   assert.ok(!saved.body_html.includes('<script>'), 'скрипт должен быть вырезан санитайзером');
   assert.equal(preview.json().html, saved.body_html);

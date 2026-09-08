@@ -40,10 +40,10 @@ export function seedPost(app, { title = 'Запись', body = 'Текст за�
 
 export const TEST_USER = { username: 'gera', password: 'пароль12345' };
 
-// Ключ CSRF в cookie теперь подписан, а форма несёт исходное значение —
-// так его и берёт браузер. Отдельно достаём подписанную строку (для
-// заголовка Cookie) и исходный ключ из скрытого поля страницы входа (для
-// заголовка Cookie и поля формы соответственно).
+// The CSRF key in the cookie is now signed, while the form carries the original value —
+// that's how the browser takes it. Separately we extract the signed string (for
+// the Cookie header) and the original key from the hidden field of the login page (for
+// the Cookie header and the form field respectively).
 export function csrfFromLoginPage(page) {
   const cookie = page.cookies.find((entry) => entry.name === 'csrf')?.value;
   const match = page.body.match(/name="_csrf" value="([^"]*)"/);

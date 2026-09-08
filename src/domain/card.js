@@ -1,18 +1,18 @@
 const IMAGE_SOURCE = /<img[^>]+src="([^"]+)"/i;
 const TONES = 8;
 
-// Обложку берём из самой записи: первая картинка текста и есть её лицо.
-// Отдельного поля обложки нет намеренно — иначе его пришлось бы заполнять
-// руками для каждой записи.
+// The cover is taken from the post itself: the first image in the text is its face.
+// There is deliberately no separate cover field — otherwise it would have to be
+// filled in by hand for every post.
 export function coverImage(html) {
   const found = IMAGE_SOURCE.exec(String(html ?? ''));
   return found ? found[1] : null;
 }
 
-// Цвет заглушки выводим из адреса записи, а не выбираем случайно: у одной
-// записи плашка всегда одного цвета, иначе лента мигала бы при каждой
-// перезагрузке. Возвращаем номер, а не цвет: политика безопасности
-// запрещает встроенные стили, поэтому цвета живут в таблице стилей.
+// The placeholder color is derived from the post's address rather than chosen at
+// random: a given post always gets the same tile color, otherwise the feed would
+// flicker on every reload. We return an index, not a color: the security policy
+// forbids inline styles, so the colors live in the stylesheet.
 export function placeholderTone(slug) {
   let hash = 0;
   for (const character of String(slug ?? '')) {

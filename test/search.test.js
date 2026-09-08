@@ -69,9 +69,9 @@ test('индекс поспевает за правкой и удалением'
 });
 
 test('при равной релевантности порядок выдачи определён', async () => {
-  // У двух записей совпадают и заголовок, и текст, поэтому релевантность
-  // одинакова. Без вторичного ключа сортировки порядок остался бы на
-  // усмотрение движка — как в соседних выборках, разводим его по id.
+  // The two records match on both title and text, so relevance
+  // is identical. Without a secondary sort key, order would be left
+  // to the engine's discretion — as in the neighboring selections, we disambiguate by id.
   const { app, cleanup } = await createTestApp();
   seedPost(app, { title: 'Одинаково', slug: 'pervaya', body: 'совпадающий текст' });
   seedPost(app, { title: 'Одинаково', slug: 'vtoraya', body: 'совпадающий текст' });

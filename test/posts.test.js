@@ -67,10 +67,10 @@ test('лента отдаёт только опубликованные, нов�
 });
 
 test('при совпадении времени публикации порядок в ленте определён', () => {
-  // У поиска такой тест уже есть, у ленты — нет, хотя вторичный ключ
-  // сортировки (id DESC) в запросе тоже есть. Здесь совпадение по времени
-  // подстроено намеренно: две записи, созданные в одну миллисекунду в
-  // реальности, вели бы себя точно так же.
+  // Search already has such a test, the feed doesn't, although the secondary
+  // sort key (id DESC) is also in the query. Here the timestamp collision is
+  // set up deliberately: two posts created in the same millisecond in
+  // reality would behave exactly the same way.
   const { db, cleanup } = createTestDatabase();
   const posts = createPostRepository(db);
   const first = posts.create(fields({ slug: 'first', status: 'published' }));

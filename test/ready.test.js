@@ -33,10 +33,10 @@ test('GET /readyz отвечает 503, пока миграции не прим�
 });
 
 test('сервер поднимается при относительном пути к данным', async () => {
-  // Ровно настройка из README для локального запуска. Библиотека отдачи
-  // файлов требует абсолютный путь и роняет приложение при старте, а все
-  // остальные тесты подставляют абсолютный временный каталог и этого не
-  // видят — как и контейнер, где путь /data.
+  // Exactly the README config for local runs. The file-serving
+  // library requires an absolute path and crashes the app at startup, while all
+  // other tests substitute an absolute temp directory and don't
+  // see it — same as the container, where the path is /data.
   const relative = './data/test-relative';
   const { db, cleanup } = createTestDatabase();
   const app = buildServer({ config: loadConfig({ DATA_DIR: relative }), db });

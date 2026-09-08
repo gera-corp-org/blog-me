@@ -31,8 +31,8 @@ test('лента разбита на страницы', async () => {
 });
 
 test('карточка в ленте выводит теги ссылками', async () => {
-  // Вывод тегов на карточке ленты никто не проверял — его можно было бы
-  // незаметно убрать, и ни один тест бы не заметил.
+  // No one checked the tag output on the feed card — it could have been
+  // quietly removed and no test would have noticed.
   const { app, cleanup } = await createTestApp();
   seedPost(app, { title: 'С тегами', slug: 's-tegami', tags: ['Код', 'Заметки'] });
 
@@ -57,8 +57,8 @@ test('страница записи отдаёт разметку тела', asy
 });
 
 test('заголовок с разметкой и кавычками выводится экранированным', async () => {
-  // Ничто сейчас не проверяет экранирование: переключение любого вывода
-  // на сырой (<%~ вместо <%=) прошло бы незамеченным.
+  // Nothing currently checks escaping: switching any output
+  // to raw (<%~ instead of <%=) would go unnoticed.
   const dangerousTitle = 'Заголовок <script>alert(1)</script> и "кавычки"';
   const { app, cleanup } = await createTestApp();
   seedPost(app, { title: dangerousTitle, slug: 'opasnaya-zapis' });

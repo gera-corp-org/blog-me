@@ -7,9 +7,9 @@ const ENTITIES = {
   '&nbsp;': ' ',
 };
 
-// Конец блока и перенос строки становятся пробелом, иначе соседние абзацы
-// склеятся в «Первый абзац.Второй абзац.». Остальные теги убираются
-// начисто, иначе перед точкой появится пробел.
+// A block end or line break becomes a space, otherwise neighbouring paragraphs
+// would merge into "First paragraph.Second paragraph.". Other tags are stripped
+// entirely, otherwise a space would appear before a period.
 const BLOCK_BOUNDARY =
   /<\/(p|div|h[1-6]|li|ul|ol|blockquote|pre|figure|figcaption|table|tr|td|th)>|<br\s*\/?>/gi;
 

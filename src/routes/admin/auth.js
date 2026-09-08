@@ -5,13 +5,13 @@ import { createRateLimiter } from '../../plugins/rateLimit.js';
 const LOGIN_LIMIT = 10;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
-// Хеш случайного пароля, с которым сверяется несуществующий пользователь:
-// сверка стоит столько же времени, сколько настоящая, и по длительности
-// ответа нельзя отличить «нет такого логина» от «неверный пароль».
-// Считается при загрузке модуля, а не в первом запросе: иначе именно этот
-// первый запрос сделает два вычисления хеша вместо одного и выдаст себя.
-// Экспортируется, чтобы готовность приманки проверялась тестом прямо, а не
-// замером времени — разовую задержку замеры надёжно поймать не могут.
+// A hash of a random password against which a nonexistent user is verified:
+// the check costs the same time as a real one, so the response time cannot
+// distinguish "no such login" from "wrong password".
+// Computed at module load rather than on the first request: otherwise that very
+// first request would do two hash computations instead of one and give itself away.
+// Exported so a test can check the decoy is ready directly, rather than by timing
+// — timing cannot reliably catch a one-off delay.
 export const DECOY_PASSWORD_HASH = await hashPassword(randomBytes(32).toString('hex'));
 
 export async function adminAuthRoutes(app) {
@@ -43,8 +43,8 @@ export async function adminAuthRoutes(app) {
       });
     }
 
-    // Пароль проверяется даже когда такого пользователя нет: иначе быстрый
-    // ответ выдаёт, что логин не существует, и его можно перебрать.
+    // The password is checked even when no such user exists: otherwise a fast
+    // response would reveal that the login doesn't exist, and it could be enumerated.
     const user = app.users.findByUsername(username);
     const correct = await verifyPassword(password, user?.password_hash ?? DECOY_PASSWORD_HASH);
 

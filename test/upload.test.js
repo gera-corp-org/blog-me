@@ -110,8 +110,8 @@ test('слишком большой файл отклоняется', async () =
   });
 
   assert.equal(response.statusCode, 413);
-  // Тело тоже проверяем: без разбора ошибки код 413 придёт и от библиотеки,
-  // но с английским текстом.
+  // We check the body too: without parsing the error, the 413 code would come from the library as well,
+  // but with English text.
   assert.equal(response.json().error, 'Файл слишком большой');
   await cleanup();
 });
@@ -119,8 +119,8 @@ test('слишком большой файл отклоняется', async () =
 test('при отказе записи на диск наружу не уходит путь сервера', async () => {
   const { app, config, cleanup } = await createTestApp();
   const { cookie, csrf } = await login(app);
-  // Подменяем каталог загрузок файлом: запись внутрь него невозможна на
-  // любой машине, включая запуск от root, поэтому проверка устойчива.
+  // We replace the uploads directory with a file: writing into it is impossible on
+  // any machine, including running as root, so the check is robust.
   rmSync(config.uploadsDir, { recursive: true, force: true });
   writeFileSync(config.uploadsDir, 'не каталог');
   const body = multipart(PNG);

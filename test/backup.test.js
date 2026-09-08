@@ -45,8 +45,8 @@ test('оставляет только заданное число снимков
 test('каталог с именем снимка не ломает ротацию', () => {
   const { db, dir, cleanup } = createTestDatabase();
   const backups = join(dir, 'backups');
-  // Такой каталог мог остаться от чужого инструмента. Раньше он вставал
-  // первым в очередь на удаление, ротация падала и не двигалась никогда.
+  // Such a directory could be left behind by another tool. It used to jump
+  // to the front of the deletion queue, so rotation crashed and never moved.
   mkdirSync(join(backups, 'blog-2020-01-01.db'), { recursive: true });
 
   const file = makeBackup(db, backups, 1, new Date('2026-09-07T12:00:00.000Z'));
@@ -60,10 +60,10 @@ test('обрывок прерванного снимка не занимает �
   const { db, dir, cleanup } = createTestDatabase();
   const backups = join(dir, 'backups');
   mkdirSync(backups, { recursive: true });
-  // Так выглядит файл, оставшийся от снимка, прерванного на середине.
+  // This is what a file left from a snapshot interrupted mid-way looks like.
   writeFileSync(join(backups, 'blog-2026-09-07.db.tmp'), 'обрывок');
-  // Обрывок за другое число: под шаблон имени снимка он не подходит, а
-  // значит ротация его никогда не удалит — убирать надо отдельно.
+  // A fragment for another date: it doesn't match the snapshot name pattern, and
+  // so rotation will never delete it — it must be cleaned up separately.
   writeFileSync(join(backups, 'blog-2026-09-05.db.tmp'), 'обрывок постарше');
 
   makeBackup(db, backups, 7, new Date('2026-09-07T12:00:00.000Z'));

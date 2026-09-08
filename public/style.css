@@ -1,6 +1,6 @@
-/* Личный блог о коде, типографике и тихих вечерах — терминальная тема.
-   Тёмный фон, моноширинный шрифт, строки вместо карточек. Смелость — в
-   типографике и тишине, а не в тенях: здесь нет ни одной тени. */
+/* A personal blog about code, typography and quiet evenings — a terminal theme.
+   Dark background, monospace font, lines instead of cards. The boldness is in
+   the typography and silence, not in shadows: there is not a single shadow here. */
 
 :root {
   color-scheme: dark;
@@ -15,8 +15,8 @@
   --rule: #262c31;
   --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
-  /* Модульный ряд: крупный заголовок работает как изображение,
-     остальное — спокойный наборный размер. */
+  /* Modular scale: the large heading works like an image,
+     the rest — a calm body size. */
   --t-xs: 0.75rem;
   --t-sm: 0.8125rem;
   --t-base: 1rem;
@@ -57,7 +57,7 @@ h1, h2, h3 {
   line-height: 1.2;
 }
 
-/* Шапка: приглашение в шелле */
+/* Header: a shell prompt invitation */
 
 .site-header {
   display: flex;
@@ -125,7 +125,7 @@ h1, h2, h3 {
 
 .search-form input::placeholder { color: var(--muted); }
 
-/* Первый экран */
+/* Above the fold */
 
 .hero {
   padding: 2rem 0 3rem;
@@ -169,7 +169,7 @@ h1, h2, h3 {
   text-transform: uppercase;
 }
 
-/* Список записей: строки, как вывод ls */
+/* Post list: rows, like ls output */
 
 .post-list {
   border-top: 1px solid var(--rule);
@@ -232,7 +232,7 @@ h1, h2, h3 {
   font-weight: 700;
 }
 
-/* Тёплые приглушённые тона плашек — различимы, но не кричат */
+/* Warm muted tones for the badges — distinguishable but not loud */
 .tone-0 { background: #4a3b2a; }
 .tone-1 { background: #3a4632; }
 .tone-2 { background: #3a3650; }
@@ -268,7 +268,7 @@ h1, h2, h3 {
 
 .tag:hover { color: var(--accent); text-decoration: underline; }
 
-/* Главная запись: панель с рамкой, без тени */
+/* Featured post: a bordered panel, no shadow */
 
 .post-featured {
   margin-bottom: 2.5rem;
@@ -313,7 +313,7 @@ h1, h2, h3 {
   font-size: var(--t-md);
 }
 
-/* Страница записи: узкая колонка, здесь читают */
+/* Post page: a narrow column for reading */
 
 .post {
   margin: 0 auto;
@@ -435,7 +435,7 @@ h1, h2, h3 {
   border-top: 1px solid var(--rule);
 }
 
-/* Постраничность и подвал */
+/* Pagination and footer */
 
 .pagination {
   display: flex;
@@ -464,7 +464,7 @@ h1, h2, h3 {
 
 .site-footer p { margin: 0.3rem 0; }
 
-/* Админка: те же панели и поля */
+/* Admin: the same panels and fields */
 
 .form,
 .editor {
@@ -613,7 +613,7 @@ button:hover { border-color: var(--accent); color: var(--accent); }
   text-transform: uppercase;
 }
 
-/* Узкий экран */
+/* Narrow screen */
 
 @media (max-width: 40rem) {
   body { padding: 1.5rem 1.1rem 4rem; }
@@ -651,7 +651,7 @@ button:hover { border-color: var(--accent); color: var(--accent); }
   }
 }
 
-/* Печать */
+/* Print */
 
 @media print {
   .site-header,

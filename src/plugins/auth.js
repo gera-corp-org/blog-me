@@ -7,9 +7,9 @@ import { createSessionRepository } from '../db/sessions.js';
 const SESSION_COOKIE = 'sid';
 const CSRF_COOKIE = 'csrf';
 
-// Ключ нужен только там, где рисуются формы. Статику, картинки и пробы
-// пропускаем: их ответы кешируются надолго, и общий кеш вправе раздать
-// один чужой ключ всем читателям.
+// The token is needed only where forms are rendered. Static files, images and
+// health probes are skipped: their responses are cached for a long time, and a
+// shared cache could hand out someone else's token to every reader.
 const CSRF_SKIP = ['/static/', '/media/', '/healthz', '/readyz'];
 
 function safeEqual(left, right) {
@@ -87,8 +87,8 @@ async function authPlugin(app) {
     const provided = request.body?._csrf ?? request.headers['x-csrf-token'];
 
     if (!unsigned.valid || !provided || !safeEqual(provided, unsigned.value)) {
-      // Редактор шлёт превью и загрузку картинок скриптом и ждёт JSON;
-      // человеку с формой нужна страница.
+      // The editor sends previews and image uploads via script and expects JSON;
+      // a person with a form needs a page.
       if ((request.headers.accept ?? '').includes('text/html')) {
         return reply.code(403).view('403.eta', { pageTitle: 'Запрос отклонён', user: request.user });
       }

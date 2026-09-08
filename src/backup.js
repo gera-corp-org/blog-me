@@ -12,10 +12,10 @@ export function makeBackup(db, backupsDir, keep, now = new Date()) {
 
   const temporary = `${target}.tmp`;
 
-  // Любой .tmp, найденный здесь, — обрывок прошлого прерванного снимка:
-  // снимок делается синхронно, двух одновременно быть не может. Обрывки за
-  // прошлые числа под шаблон имени снимка не подходят и в ротацию не
-  // попадают, поэтому иначе копились бы вечно, каждый размером с базу.
+  // Any .tmp found here is a leftover from a previously interrupted snapshot:
+  // snapshots are made synchronously, so two cannot exist at once. Leftovers from
+  // past dates don't match the snapshot name pattern and never enter rotation, so
+  // otherwise they would pile up forever, each one the size of the database.
   for (const orphan of readdirSync(backupsDir).filter((name) => TEMPORARY_PATTERN.test(name))) {
     rmSync(join(backupsDir, orphan), { force: true });
   }
@@ -24,9 +24,9 @@ export function makeBackup(db, backupsDir, keep, now = new Date()) {
   rmSync(target, { force: true });
   renameSync(temporary, target);
 
-  // В очередь на удаление берём только обычные файлы. Каталог с похожим
-  // именем иначе ломает ротацию навсегда: удалить его нечем, а стоит он
-  // первым в очереди, и она не сдвинется ни в один из следующих дней.
+  // Only regular files go into the deletion queue. A directory with a similar
+  // name would otherwise break rotation forever: there's no way to delete it, and
+  // since it sits first in the queue, the queue never advances on any later day.
   const existing = readdirSync(backupsDir)
     .filter((name) => NAME_PATTERN.test(name) && statSync(join(backupsDir, name)).isFile())
     .sort();
@@ -38,9 +38,9 @@ export function makeBackup(db, backupsDir, keep, now = new Date()) {
 }
 
 export function startBackupSchedule({ db, sessions, config, log }) {
-  // Просроченные сессии чистятся на том же суточном тике, что и снимок:
-  // отдельного таймера под них заводить незачем, а без него таблица
-  // sessions росла бы без предела между редкими перезапусками.
+  // Expired sessions are cleaned on the same daily tick as the snapshot: there's
+  // no point in a separate timer for them, and without one the sessions table
+  // would grow without limit between rare restarts.
   const run = () => {
     try {
       const file = makeBackup(db, config.backupsDir, config.backupKeep);

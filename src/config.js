@@ -8,8 +8,8 @@ const readInt = (value, fallback) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-// Пустой список означает «не верить заголовку ни от кого»: Fastify ждёт
-// здесь false, а не пустой массив.
+// An empty list means "trust the header from no one": Fastify expects false here,
+// not an empty array.
 const readList = (value, fallback) => {
   const entries = String(value ?? fallback).split(',').map((entry) => entry.trim()).filter(Boolean);
   return entries.length > 0 ? entries : false;
@@ -21,20 +21,20 @@ const readBool = (value, fallback) => {
 };
 
 export function loadConfig(env = process.env) {
-  // Путь приводится к абсолютному: библиотека отдачи файлов требует именно
-  // такой и роняет приложение при старте, а значение по умолчанию —
-  // относительное. resolve заодно убирает хвостовые слэши.
+  // The path is made absolute: the static file library requires exactly that and
+  // crashes the app at startup otherwise, and the default value is relative.
+  // resolve also strips trailing slashes.
   const dataDir = resolve(env.DATA_DIR ?? './data');
   return {
     port: readInt(env.PORT, 3000),
     host: env.HOST ?? '0.0.0.0',
-    // Кому верить, когда заголовок X-Forwarded-For называет адрес
-    // посетителя. Заголовок принимается, только если сосед по соединению
-    // сам входит в этот список, поэтому умолчание безопасно и за ingress
-    // кластера (он в частной сети), и при прямом доступе из интернета
-    // (там сосед — публичный адрес, и заголовку не верят). Число сюда
-    // передавать бесполезно: Fastify намеренно не поддерживает доверие
-    // «по числу узлов», потому что оно не проверяет самого соседа.
+    // Who to trust when the X-Forwarded-For header names the visitor's address.
+    // The header is accepted only if the connection peer is itself in this list,
+    // so the default is safe both behind the cluster's ingress (it's on the
+    // private network) and with direct internet access (there the peer is a
+    // public address and the header is not trusted). Passing a number here is
+    // pointless: Fastify deliberately does not support trust "by hop count",
+    // because that does not verify the peer itself.
     trustProxy: readList(env.TRUST_PROXY, 'loopback,uniquelocal'),
     isProduction: env.NODE_ENV === 'production',
 

@@ -23,8 +23,8 @@ test('обрезает слишком длинный слаг', () => {
 });
 
 test('после обрезки не остаётся хвостового дефиса', () => {
-  // Пробел поставлен так, что дефис попадает ровно на границу среза:
-  // 79 букв + дефис = 80-й символ. Без среза хвоста слаг кончался бы дефисом.
+  // The space is placed so the hyphen lands exactly on the cut boundary:
+  // 79 letters + hyphen = the 80th character. Without trimming the tail, the slug would end with a hyphen.
   const slug = slugify(`${'a'.repeat(79)} ${'b'.repeat(20)}`);
   assert.equal(slug, 'a'.repeat(79));
 });

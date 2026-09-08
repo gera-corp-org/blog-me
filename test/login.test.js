@@ -68,9 +68,9 @@ test('после десяти неудач вход отвечает 429', async
 });
 
 test('заголовку доверенного прокси верят: попытки считаются по разным адресам', async () => {
-  // Умолчание доверяет loopback, а в тестах сосед по соединению — 127.0.0.1.
-  // Значит заголовок принимается, и одиннадцать попыток с одиннадцати
-  // разных адресов не должны упереться в предел, рассчитанный на один.
+  // The default trusts loopback, and in tests the connection peer is 127.0.0.1.
+  // So the header is accepted, and eleven attempts from eleven
+  // different addresses must not hit a limit meant for one.
   const { app, cleanup } = await createTestApp();
   app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
   const page = await app.inject({ method: 'GET', url: '/admin/login' });
@@ -96,8 +96,8 @@ test('заголовку доверенного прокси верят: поп�
 });
 
 test('заголовку от недоверенного клиента не верят: подделка адреса не обходит предел', async () => {
-  // Здесь доверенной объявлена чужая сеть, поэтому 127.0.0.1 недоверенный и
-  // его заголовок игнорируется — все попытки считаются как один клиент.
+  // Here a foreign network is declared trusted, so 127.0.0.1 is untrusted and
+  // its header is ignored — all attempts count as a single client.
   const { app, cleanup } = await createTestApp({ TRUST_PROXY: '10.0.0.0/8' });
   app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
   const page = await app.inject({ method: 'GET', url: '/admin/login' });
@@ -123,9 +123,9 @@ test('заголовку от недоверенного клиента не в�
 });
 
 test('приманка готова до первого запроса', () => {
-  // Прямая проверка вместо замера: если считать приманку лениво, первый
-  // вход с несуществующим логином сделает два вычисления хеша и окажется
-  // вдвое дольше — а замеры разовую задержку не ловят.
+  // A direct check instead of timing: if the dummy hash is computed lazily, the first
+  // login with a nonexistent username does two hash computations and turns out
+  // twice as slow — and timings don't catch a one-off delay.
   assert.match(DECOY_PASSWORD_HASH, /^scrypt\$\d+\$\d+\$\d+\$/);
 });
 
@@ -141,8 +141,8 @@ test('в установившемся режиме время ответа не 
     payload: new URLSearchParams({ username, password: 'не тот', _csrf: csrf }).toString(),
   });
 
-  // Наименьшее из трёх замеров: минимум устойчивее среднего к случайным
-  // задержкам планировщика.
+  // The smallest of three measurements: the minimum is more robust than the mean against random
+  // scheduler delays.
   const measure = async (username) => {
     const runs = [];
     for (let index = 0; index < 3; index += 1) {
@@ -157,8 +157,8 @@ test('в установившемся режиме время ответа не 
   const unknown = await measure('никакого-такого-логина-нет');
   const ratio = unknown / known;
 
-  // Сравниваем с базовой линией, а не с абсолютным порогом: порог поймал бы
-  // только полный пропуск сверки, а утечку в полтора раза пропустил бы.
+  // We compare against a baseline, not an absolute threshold: a threshold would catch
+  // only a complete skip of the check, but would miss a 1.5x leak.
   assert.ok(
     ratio > 0.5 && ratio < 2,
     `ответы отличаются в ${ratio.toFixed(2)} раза (${known.toFixed(1)} мс против ${unknown.toFixed(1)} мс)`,

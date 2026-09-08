@@ -30,9 +30,9 @@ test('меняет пароль и закрывает прочие сессии'
   const oldSession = await app.inject({ method: 'GET', url: '/admin', headers: { cookie: first.cookie } });
   assert.equal(oldSession.statusCode, 303, 'старая сессия закрыта');
 
-  // Вторая половина требования: та вкладка, откуда меняли пароль, обязана
-  // остаться внутри. Без этой проверки можно убрать выдачу новой сессии, и
-  // тест останется зелёным.
+  // The second half of the requirement: the tab from which the password was changed must
+  // stay logged in. Without this check, issuing a new session could be removed, and
+  // the test would stay green.
   const refreshed = response.cookies.find((cookie) => cookie.name === 'sid');
   assert.ok(refreshed, 'новая сессия не выдана');
   const stillInside = await app.inject({

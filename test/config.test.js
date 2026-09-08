@@ -33,9 +33,9 @@ test('читает значения из окружения', () => {
 });
 
 test('пути от DATA_DIR получаются абсолютными', () => {
-  // Относительный путь ломает отдачу файлов: библиотека требует абсолютный
-  // и падает при старте. Значение по умолчанию как раз относительное,
-  // поэтому падала ровно команда запуска из README.
+  // A relative path breaks file serving: the library requires an absolute one
+  // and crashes at startup. The default value is exactly relative,
+  // so the README's startup command was the one that crashed.
   const config = loadConfig({ DATA_DIR: './data' });
 
   assert.ok(isAbsolute(config.dataDir), `dataDir не абсолютный: ${config.dataDir}`);
@@ -52,8 +52,8 @@ test('срезает хвостовой слэш у DATA_DIR', () => {
 });
 
 test('пустой TRUST_PROXY отключает доверие заголовку', () => {
-  // Fastify ждёт здесь именно false: пустой массив он принял бы за список
-  // и продолжил бы разбирать заголовок.
+  // Fastify expects false here specifically: it would take an empty array for a list
+  // and would keep parsing the header.
   assert.equal(loadConfig({ TRUST_PROXY: '' }).trustProxy, false);
   assert.equal(loadConfig({ TRUST_PROXY: ' , ' }).trustProxy, false);
 });

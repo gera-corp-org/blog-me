@@ -57,9 +57,10 @@ export async function adminPostRoutes(app) {
     });
   });
 
-  // Создание и правка отличаются лишь тем, есть ли исходная запись.
-  // Общий код держим в одном месте: разъехавшиеся копии уже дали расхождение
-  // — при пустом заголовке правка теряла выбранный статус, а создание нет.
+  // Creation and editing differ only in whether there is an existing post.
+  // We keep the shared code in one place: the diverged copies already produced
+  // a discrepancy — with an empty title, editing lost the selected status while
+  // creation did not.
   const saveForm = async (request, reply, existing) => {
     const form = readForm(request.body);
 

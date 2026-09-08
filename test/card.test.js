@@ -15,8 +15,8 @@ test('без картинок обложки нет', () => {
 });
 
 test('цвет заглушки постоянен для записи и различается между записями', () => {
-  // Цвет выводится из адреса, поэтому у одной записи плашка всегда одна и
-  // та же — иначе лента мигала бы разными цветами при каждой перезагрузке.
+  // The color is derived from the address, so a given post always gets one and
+  // the same badge — otherwise the feed would flicker with different colors on each reload.
   assert.equal(placeholderTone('privet-mir'), placeholderTone('privet-mir'));
 
   const tones = new Set(['a', 'b', 'c', 'privet-mir', 'kot', 'o-dline-stroki'].map(placeholderTone));
