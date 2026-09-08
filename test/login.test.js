@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTestApp, login, form, TEST_USER } from './helpers/app.js';
+import { createTestApp, login, form, TEST_USER, csrfFromLoginPage } from './helpers/app.js';
 import { DECOY_PASSWORD_HASH } from '../src/routes/admin/auth.js';
 import { hashPassword } from '../src/domain/password.js';
 import { ensureAdminUser } from '../src/bootstrap.js';
@@ -20,12 +20,12 @@ test('неверный пароль не создаёт сессию', async () 
   const { app, cleanup } = await createTestApp();
   app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
   const page = await app.inject({ method: 'GET', url: '/admin/login' });
-  const csrf = page.cookies.find((cookie) => cookie.name === 'csrf').value;
+  const { cookie: csrfCookie, token: csrf } = csrfFromLoginPage(page);
 
   const response = await app.inject({
     method: 'POST',
     url: '/admin/login',
-    headers: { cookie: `csrf=${csrf}`, ...form({}).headers },
+    headers: { cookie: `csrf=${csrfCookie}`, ...form({}).headers },
     payload: new URLSearchParams({ username: TEST_USER.username, password: 'не тот', _csrf: csrf }).toString(),
   });
 
@@ -51,11 +51,11 @@ test('после десяти неудач вход отвечает 429', async
   const { app, cleanup } = await createTestApp();
   app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
   const page = await app.inject({ method: 'GET', url: '/admin/login' });
-  const csrf = page.cookies.find((cookie) => cookie.name === 'csrf').value;
+  const { cookie: csrfCookie, token: csrf } = csrfFromLoginPage(page);
   const attempt = () => app.inject({
     method: 'POST',
     url: '/admin/login',
-    headers: { cookie: `csrf=${csrf}`, 'content-type': 'application/x-www-form-urlencoded' },
+    headers: { cookie: `csrf=${csrfCookie}`, 'content-type': 'application/x-www-form-urlencoded' },
     payload: new URLSearchParams({ username: TEST_USER.username, password: 'не тот', _csrf: csrf }).toString(),
   });
 
@@ -74,7 +74,7 @@ test('заголовку доверенного прокси верят: поп�
   const { app, cleanup } = await createTestApp();
   app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
   const page = await app.inject({ method: 'GET', url: '/admin/login' });
-  const csrf = page.cookies.find((cookie) => cookie.name === 'csrf').value;
+  const { cookie: csrfCookie, token: csrf } = csrfFromLoginPage(page);
   const codes = [];
 
   for (let index = 1; index <= 11; index += 1) {
@@ -82,7 +82,7 @@ test('заголовку доверенного прокси верят: поп�
       method: 'POST',
       url: '/admin/login',
       headers: {
-        cookie: `csrf=${csrf}`,
+        cookie: `csrf=${csrfCookie}`,
         'content-type': 'application/x-www-form-urlencoded',
         'x-forwarded-for': `203.0.113.${index}`,
       },
@@ -101,7 +101,7 @@ test('заголовку от недоверенного клиента не в�
   const { app, cleanup } = await createTestApp({ TRUST_PROXY: '10.0.0.0/8' });
   app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
   const page = await app.inject({ method: 'GET', url: '/admin/login' });
-  const csrf = page.cookies.find((cookie) => cookie.name === 'csrf').value;
+  const { cookie: csrfCookie, token: csrf } = csrfFromLoginPage(page);
   const codes = [];
 
   for (let index = 1; index <= 11; index += 1) {
@@ -109,7 +109,7 @@ test('заголовку от недоверенного клиента не в�
       method: 'POST',
       url: '/admin/login',
       headers: {
-        cookie: `csrf=${csrf}`,
+        cookie: `csrf=${csrfCookie}`,
         'content-type': 'application/x-www-form-urlencoded',
         'x-forwarded-for': `203.0.113.${index}`,
       },
@@ -133,11 +133,11 @@ test('в установившемся режиме время ответа не 
   const { app, cleanup } = await createTestApp();
   app.users.create(TEST_USER.username, await hashPassword(TEST_USER.password));
   const page = await app.inject({ method: 'GET', url: '/admin/login' });
-  const csrf = page.cookies.find((cookie) => cookie.name === 'csrf').value;
+  const { cookie: csrfCookie, token: csrf } = csrfFromLoginPage(page);
   const attempt = (username) => app.inject({
     method: 'POST',
     url: '/admin/login',
-    headers: { cookie: `csrf=${csrf}`, 'content-type': 'application/x-www-form-urlencoded' },
+    headers: { cookie: `csrf=${csrfCookie}`, 'content-type': 'application/x-www-form-urlencoded' },
     payload: new URLSearchParams({ username, password: 'не тот', _csrf: csrf }).toString(),
   });
 

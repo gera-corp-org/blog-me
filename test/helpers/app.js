@@ -40,20 +40,30 @@ export function seedPost(app, { title = 'Запись', body = 'Текст за�
 
 export const TEST_USER = { username: 'gera', password: 'пароль12345' };
 
+// Ключ CSRF в cookie теперь подписан, а форма несёт исходное значение —
+// так его и берёт браузер. Отдельно достаём подписанную строку (для
+// заголовка Cookie) и исходный ключ из скрытого поля страницы входа (для
+// заголовка Cookie и поля формы соответственно).
+export function csrfFromLoginPage(page) {
+  const cookie = page.cookies.find((entry) => entry.name === 'csrf')?.value;
+  const match = page.body.match(/name="_csrf" value="([^"]*)"/);
+  return { cookie, token: match ? match[1] : undefined };
+}
+
 export async function login(app, credentials = TEST_USER) {
   if (!app.users.findByUsername(credentials.username)) {
     app.users.create(credentials.username, await hashPassword(credentials.password));
   }
 
   const page = await app.inject({ method: 'GET', url: '/admin/login' });
-  const csrf = page.cookies.find((cookie) => cookie.name === 'csrf').value;
+  const { cookie: csrfCookie, token: csrf } = csrfFromLoginPage(page);
 
   const response = await app.inject({
     method: 'POST',
     url: '/admin/login',
     headers: {
       'content-type': 'application/x-www-form-urlencoded',
-      cookie: `csrf=${csrf}`,
+      cookie: `csrf=${csrfCookie}`,
     },
     payload: new URLSearchParams({
       username: credentials.username,
@@ -65,7 +75,7 @@ export async function login(app, credentials = TEST_USER) {
   const session = response.cookies.find((cookie) => cookie.name === 'sid');
   if (!session) throw new Error(`вход не удался: ${response.statusCode}`);
 
-  return { cookie: `sid=${session.value}; csrf=${csrf}`, csrf };
+  return { cookie: `sid=${session.value}; csrf=${csrfCookie}`, csrf };
 }
 
 export function form(fields) {

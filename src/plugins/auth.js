@@ -7,6 +7,11 @@ import { createSessionRepository } from '../db/sessions.js';
 const SESSION_COOKIE = 'sid';
 const CSRF_COOKIE = 'csrf';
 
+// Ключ нужен только там, где рисуются формы. Статику, картинки и пробы
+// пропускаем: их ответы кешируются надолго, и общий кеш вправе раздать
+// один чужой ключ всем читателям.
+const CSRF_SKIP = ['/static/', '/media/', '/healthz', '/readyz'];
+
 function safeEqual(left, right) {
   const a = Buffer.from(String(left));
   const b = Buffer.from(String(right));
@@ -58,11 +63,17 @@ async function authPlugin(app) {
       }
     }
 
-    let token = request.cookies[CSRF_COOKIE];
-    if (!token) {
-      token = randomBytes(32).toString('hex');
-      reply.setCookie(CSRF_COOKIE, token, cookieOptions);
+    if (CSRF_SKIP.some((prefix) => request.url.startsWith(prefix))) return;
+
+    const rawCsrf = request.cookies[CSRF_COOKIE];
+    const unsignedCsrf = rawCsrf ? request.unsignCookie(rawCsrf) : { valid: false };
+    if (unsignedCsrf.valid) {
+      request.csrfToken = unsignedCsrf.value;
+      return;
     }
+
+    const token = randomBytes(32).toString('hex');
+    reply.setCookie(CSRF_COOKIE, token, { ...cookieOptions, signed: true });
     request.csrfToken = token;
   });
 
@@ -71,10 +82,17 @@ async function authPlugin(app) {
   });
 
   app.decorate('verifyCsrf', async (request, reply) => {
-    const expected = request.cookies[CSRF_COOKIE];
+    const raw = request.cookies[CSRF_COOKIE];
+    const unsigned = raw ? request.unsignCookie(raw) : { valid: false };
     const provided = request.body?._csrf ?? request.headers['x-csrf-token'];
-    if (!expected || !provided || !safeEqual(provided, expected)) {
-      return reply.code(403).view('403.eta', { pageTitle: 'Запрос отклонён', user: request.user });
+
+    if (!unsigned.valid || !provided || !safeEqual(provided, unsigned.value)) {
+      // Редактор шлёт превью и загрузку картинок скриптом и ждёт JSON;
+      // человеку с формой нужна страница.
+      if ((request.headers.accept ?? '').includes('text/html')) {
+        return reply.code(403).view('403.eta', { pageTitle: 'Запрос отклонён', user: request.user });
+      }
+      return reply.code(403).send({ error: 'Запрос отклонён' });
     }
   });
 }
