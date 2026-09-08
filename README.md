@@ -1,81 +1,85 @@
-# Блог
+# Blog
 
-Личный блог: публичная часть и админка с редактором Markdown.
-Одно приложение на Node, база SQLite на диске.
+A personal blog: a public site plus an admin panel with a Markdown editor.
+One Node application, a SQLite database on disk.
 
-## Разработка
+## Development
 
     npm install
     npm test
     DATA_DIR=./data COOKIE_SECURE=false \
-      ADMIN_USERNAME=gera ADMIN_PASSWORD='придумайте-пароль' npm run dev
+      ADMIN_USERNAME=gera ADMIN_PASSWORD='pick-a-password' npm run dev
 
-Пароль из этой команды создаёт пользователя в локальной базе при первом
-запуске, поэтому подставьте свой, а не оставляйте пример: иначе логин и
-пароль вашего блога будут написаны в открытом файле репозитория.
+The password from this command creates the user in the local database on
+first run, so substitute your own instead of leaving the example: otherwise
+your blog's login and password would be written into an open repository file.
 
-Открыть http://localhost:3000, войти на /admin/login.
+Open http://localhost:3000 and log in at /admin/login.
 
-## Переменные окружения
+## Environment variables
 
-| Переменная | По умолчанию | Смысл |
+| Variable | Default | Meaning |
 |---|---|---|
-| `PORT` | 3000 | порт |
-| `TRUST_PROXY` | `loopback,uniquelocal` | чьему заголовку с адресом посетителя верить; пустое значение — не верить никому |
-| `DATA_DIR` | `./data` | корень для базы, картинок и снимков |
-| `SITE_URL` | `http://localhost:3000` | абсолютный адрес, нужен для ленты подписки |
-| `SITE_TITLE` | `Блог` | название в шапке |
-| `SITE_DESCRIPTION` | пусто | подпись в подвале и ленте |
-| `SITE_AUTHOR` | пусто | автор в ленте |
-| `POSTS_PER_PAGE` | 10 | размер страницы ленты |
-| `SESSION_TTL_DAYS` | 30 | срок сессии |
-| `SESSION_SECRET` | ключ для разработки | подпись cookie, в бою обязателен |
-| `COOKIE_SECURE` | `true` | ставить `false` только для локального http |
-| `UPLOAD_MAX_BYTES` | 10485760 | предел размера картинки |
-| `BACKUP_KEEP` | 7 | сколько снимков базы хранить |
-| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | нет | создают первого пользователя при пустой базе |
+| `PORT` | 3000 | port |
+| `TRUST_PROXY` | `loopback,uniquelocal` | whose visitor-address header to trust; an empty value trusts nobody |
+| `DATA_DIR` | `./data` | root for the database, images and snapshots |
+| `SITE_URL` | `http://localhost:3000` | absolute URL, needed for the subscription feed |
+| `SITE_TITLE` | `Blog` | title in the header |
+| `SITE_DESCRIPTION` | empty | tagline in the footer and feed |
+| `SITE_AUTHOR` | empty | author in the feed |
+| `POSTS_PER_PAGE` | 10 | feed page size |
+| `SESSION_TTL_DAYS` | 30 | session lifetime |
+| `SESSION_SECRET` | a dev key | cookie signature; required in production |
+| `COOKIE_SECURE` | `true` | set `false` only for local http |
+| `UPLOAD_MAX_BYTES` | 10485760 | image size limit |
+| `BACKUP_KEEP` | 7 | how many database snapshots to keep |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | none | create the first user when the database is empty |
 
-## Про доверие к прокси
+## About proxy trust
 
-Ограничение попыток входа считает попытки по адресу посетителя, а за
-ingress этот адрес приходит в заголовке. Заголовку верят только от
-соседа по соединению из списка `TRUST_PROXY`.
+The login rate limit counts attempts by the visitor's address, and behind
+ingress that address arrives in a header. The header is trusted only from the
+connection peer listed in `TRUST_PROXY`.
 
-Умолчание `loopback,uniquelocal` рассчитано на обычный кластер: ingress
-стоит в частной сети, значит его заголовку можно верить. Обратная
-сторона — верить будут любому поду из частной сети, а не только ingress.
-Если рядом есть недоверенные поды, сузьте список до адреса или подсети
-самого ingress-контроллера. Пустое значение (`TRUST_PROXY=`) отключает
-доверие заголовку совсем: тогда адресом каждого посетителя станет адрес
-ingress, и ограничение попыток превратится в общий счётчик на всех.
+The default `loopback,uniquelocal` is meant for an ordinary cluster: ingress
+sits on the private network, so its header can be trusted. The flip side is
+that any pod in the private network is trusted, not just ingress. If there
+are untrusted pods nearby, narrow the list to the ingress controller's
+address or subnet. An empty value (`TRUST_PROXY=`) disables header trust
+entirely: every visitor's address becomes the ingress address, and the rate
+limit turns into a shared counter for everyone.
 
-## Развёртывание
+## Deployment
 
-    docker build -t gera-blog:1.0.0 .
-    kubectl apply -k deploy/k8s
-    kubectl -n blog create secret generic blog-secrets \
-      --from-literal=SESSION_SECRET="$(openssl rand -hex 32)" \
-      --from-literal=ADMIN_USERNAME=gera \
-      --from-literal=ADMIN_PASSWORD='пароль'
+The app ships as a Helm chart (`deploy/helm/blog`) and a container image
+published to GHCR.
 
-Пространство имён `blog` создаётся самим `kubectl apply -k deploy/k8s`,
-поэтому секрет заводится после применения манифестов, а не до — иначе
-команда упадёт с «namespaces "blog" not found».
+    helm install blog ./deploy/helm/blog \
+      --set secrets.sessionSecret="$(openssl rand -hex 32)" \
+      --set secrets.adminPassword='...' \
+      --set config.SITE_URL="https://blog.example.com" \
+      --set ingress.host="blog.example.com"
 
-Образ собран локально и не отправляется в реестр: тег `gera-blog:1.0.0`
-из манифеста должен быть доступен узлам кластера — либо собран прямо на
-узле, либо отправлен в реестр, который эти узлы видят.
+The chart creates the `blog` namespace itself (`namespace.create`). Secrets
+are empty in `values.yaml` and are passed at install time, so no credentials
+ever land in the repository.
 
-Реплика всегда одна: SQLite и том RWO не допускают двух писателей.
+CI builds and pushes the image to `ghcr.io/gera-corp-org/blog-me` on every
+push to `master` (tag `latest`) and on release tags `vX.Y.Z` (tags `X.Y.Z`
+and `X.Y`). The chart resolves the image version from `appVersion` in
+`Chart.yaml`.
 
-## Бэкапы
+There is always a single replica: SQLite and the RWO volume do not allow two
+writers.
 
-Приложение раз в сутки кладёт снимок базы в `$DATA_DIR/backups` и хранит
-последние `BACKUP_KEEP` файлов. Забрать снимок из кластера:
+## Backups
 
-    kubectl -n blog cp blog-<под>:/data/backups/blog-2026-09-07.db ./blog.db
+The app writes a database snapshot to `$DATA_DIR/backups` once a day and
+keeps the last `BACKUP_KEEP` files. To pull a snapshot out of the cluster:
 
-## Документы
+    kubectl -n blog cp blog-<pod>:/data/backups/blog-2026-09-07.db ./blog.db
 
-- Дизайн: `docs/superpowers/specs/2026-09-07-blog-design.md`
-- План работ: `docs/superpowers/plans/2026-09-07-blog.md`
+## Documents
+
+- Design: `docs/superpowers/specs/2026-09-07-blog-design.md`
+- Work plan: `docs/superpowers/plans/2026-09-07-blog.md`
