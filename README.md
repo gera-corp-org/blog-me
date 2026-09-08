@@ -82,4 +82,3 @@ keeps the last `BACKUP_KEEP` files. To pull a snapshot out of the cluster:
 ## Documents
 
 - Design: `docs/superpowers/specs/2026-09-07-blog-design.md`
-- Work plan: `docs/superpowers/plans/2026-09-07-blog.md`

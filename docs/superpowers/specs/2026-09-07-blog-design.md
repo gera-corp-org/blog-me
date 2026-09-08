@@ -1,314 +1,316 @@
-# Личный блог: дизайн
+# Personal blog: design
 
-Дата: 2026-09-07
+Date: 2026-09-07
 
-## 1. Задача
+## 1. Goal
 
-Сайт-блог для личных записей. Владелец пишет записи через веб-админку в
-браузере, читатели видят публичную часть без регистрации. Приложение
-разворачивается в существующем кластере Kubernetes владельца.
+A blog site for personal notes. The owner writes posts through a web admin
+panel in the browser; readers see the public part without registration. The
+app is deployed in the owner's existing Kubernetes cluster.
 
-Автор и администратор — один человек. Многопользовательской работы,
-ролей и модерации не предусмотрено.
+The author and administrator are the same person. No multi-user work, roles
+or moderation are planned.
 
-## 2. Принятые решения
+## 2. Decisions
 
-| Решение | Выбор | Почему |
+| Decision | Choice | Why |
 |---|---|---|
-| Способ публикации | Веб-админка с логином, записи в базе | Писать из браузера, в том числе с телефона, без git и редактора |
-| Стек | Node 22, Fastify, серверные шаблоны | Лёгкий образ, нет сборки фронтенда, приложение целиком помещается в голове |
-| База | SQLite в файле на PVC | Личный блог не требует сетевой СУБД; бэкап — копия файла |
-| Вход | Логин и пароль внутри приложения | Нет зависимости от внешнего провайдера SSO |
-| Рендер Markdown | На сервере, результат сохраняется в базу | Один парсер на превью и публикацию; страница читается одним запросом |
-| Реплик | Одна, стратегия Recreate | Файл SQLite и том RWO не допускают двух писателей |
+| Publishing | Web admin with login, posts in the database | Write from the browser, including from a phone, without git or an editor |
+| Stack | Node 22, Fastify, server-side templates | A light image, no frontend build, the whole app fits in one's head |
+| Database | SQLite in a file on a PVC | A personal blog needs no network DBMS; backup is a file copy |
+| Login | Username and password inside the app | No dependency on an external SSO provider |
+| Markdown rendering | On the server, the result saved to the database | One parser for preview and publishing; a page is served in one request |
+| Replicas | One, Recreate strategy | The SQLite file and RWO volume do not allow two writers |
 
-## 3. Область работ
+## 3. Scope
 
-Входит: публичная лента с постраничностью, страница записи, теги и
-фильтрация по ним, полнотекстовый поиск, лента RSS/Atom, админка с
-редактором Markdown и серверным превью, черновики, загрузка картинок,
-вход по паролю, смена пароля, контейнер и манифесты Kubernetes,
-ежедневный бэкап базы.
+In: a public feed with pagination, a post page, tags and filtering by them,
+full-text search, an RSS/Atom feed, an admin panel with a Markdown editor
+and server-side preview, drafts, image upload, password login, password
+change, a container and Kubernetes manifests, a daily database backup.
 
-Не входит: комментарии, аналитика, рассылка по почте, несколько
-авторов, планирование публикации по времени, темы оформления,
-импорт из других блогов.
+Out: comments, analytics, email newsletters, multiple authors, scheduled
+publishing, themes, imports from other blogs.
 
-## 4. Архитектура
+## 4. Architecture
 
-### 4.1 Структура каталогов
+### 4.1 Directory layout
 
 ```
 src/
-  db/          открытие базы, миграции, репозитории (posts, tags, users, sessions)
-  domain/      чистые функции: слаг, рендер Markdown, санитайз, анонс, валидация
+  db/          database open, migrations, repositories (posts, tags, users, sessions)
+  domain/      pure functions: slug, Markdown render, sanitize, excerpt, validation
   routes/
-    public/    лента, запись, тег, поиск, RSS, отдача медиа, пробы
-    admin/     вход, список, редактор, превью, загрузка, смена пароля
-  plugins/     сессии, шаблонизатор, отдача статики, ограничение частоты
-  server.js    сборка приложения
-  main.js      точка входа: миграции, запуск, планировщик бэкапов
-views/         шаблоны страниц
-migrations/    SQL-файлы миграций по номерам
-public/        стили и статические файлы
-test/          тесты
-deploy/helm/   Helm-чарт для Kubernetes
+    public/    feed, post, tag, search, RSS, media serving, probes
+    admin/     login, list, editor, preview, upload, password change
+  plugins/     sessions, template engine, static serving, rate limiting
+  server.js    app assembly
+  main.js      entry point: migrations, startup, backup scheduler
+views/         page templates
+migrations/    numbered SQL migration files
+public/        styles and static files
+test/          tests
+deploy/helm/   Helm chart for Kubernetes
 ```
 
-### 4.2 Границы слоёв
+### 4.2 Layer boundaries
 
-- `domain/` не знает ни про базу, ни про HTTP. Тестируется вызовом функций.
-- `db/` — единственное место, где есть SQL. Репозитории возвращают простые объекты.
-- `routes/` не содержит логики: разбирает запрос, зовёт домен и репозиторий,
-  отдаёт шаблон.
+- `domain/` knows neither the database nor HTTP. Tested by calling functions.
+- `db/` is the only place with SQL. Repositories return plain objects.
+- `routes/` holds no logic: it parses the request, calls the domain and the
+  repository, returns a template.
 
-Проверка границы: маршрут можно переписать, не трогая домен, и наоборот.
+Boundary check: a route can be rewritten without touching the domain, and
+vice versa.
 
-## 5. Данные
+## 5. Data
 
-### 5.1 Схема
+### 5.1 Schema
 
 `posts`
 - `id` INTEGER PRIMARY KEY
 - `slug` TEXT NOT NULL UNIQUE
 - `title` TEXT NOT NULL
-- `body_md` TEXT NOT NULL — исходный текст, единственный источник правды
-- `body_html` TEXT NOT NULL — результат рендера и санитайза
-- `excerpt` TEXT NOT NULL — анонс для ленты
+- `body_md` TEXT NOT NULL — the source text, the single source of truth
+- `body_html` TEXT NOT NULL — the render and sanitize result
+- `excerpt` TEXT NOT NULL — the feed teaser
 - `status` TEXT NOT NULL CHECK (status IN ('draft','published'))
 - `created_at`, `updated_at` TEXT NOT NULL — ISO 8601, UTC
-- `published_at` TEXT NULL — проставляется при первой публикации
+- `published_at` TEXT NULL — set on first publish
 
-Индекс: `(status, published_at DESC)` — под запрос ленты.
+Index: `(status, published_at DESC)` — for the feed query.
 
 `tags`: `id`, `name` TEXT NOT NULL, `slug` TEXT NOT NULL UNIQUE.
 
-`post_tags`: `post_id`, `tag_id`, первичный ключ по паре, внешние ключи
-с каскадным удалением.
+`post_tags`: `post_id`, `tag_id`, composite primary key, foreign keys with
+cascading deletes.
 
-`users`: `id`, `username` TEXT NOT NULL UNIQUE, `password_hash` TEXT NOT NULL,
-`created_at`. Ожидается одна строка.
+`users`: `id`, `username` TEXT NOT NULL UNIQUE, `password_hash` TEXT NOT
+NULL, `created_at`. One row expected.
 
-`sessions`: `id` TEXT PRIMARY KEY (случайный токен), `user_id`,
-`created_at`, `expires_at`. Индекс по `expires_at` для чистки.
+`sessions`: `id` TEXT PRIMARY KEY (random token), `user_id`, `created_at`,
+`expires_at`. Index on `expires_at` for cleanup.
 
-`posts_fts`: виртуальная таблица FTS5 по `title` и `body_md`, связанная с
-`posts` и синхронизируемая триггерами на вставку, обновление и удаление.
-Поиск отдаёт только записи со статусом `published`.
+`posts_fts`: a virtual FTS5 table over `title` and `body_md`, linked to
+`posts` and synced by triggers on insert, update and delete. Search returns
+only posts with status `published`.
 
-### 5.2 Миграции
+### 5.2 Migrations
 
-Каталог `migrations/` с файлами вида `001_init.sql`. Номер применённой
-версии хранится в самой базе (`PRAGMA user_version`). При старте
-применяются недостающие по возрастанию, в транзакции. Повторный запуск
-безопасен и ничего не делает.
+A `migrations/` directory with files like `001_init.sql`. The applied
+version number is stored in the database itself (`PRAGMA user_version`). On
+startup the missing ones are applied in ascending order, in a transaction.
+Re-running is safe and does nothing.
 
-Режим базы: `journal_mode = WAL`, `foreign_keys = ON`, `busy_timeout`.
+Database mode: `journal_mode = WAL`, `foreign_keys = ON`, `busy_timeout`.
 
-### 5.3 Файлы
+### 5.3 Files
 
-Том монтируется в `/data`:
+The volume is mounted at `/data`:
 
 ```
-/data/blog.db          база
-/data/uploads/2026/09/<sha256>.<ext>   картинки
-/data/backups/         снимки базы
+/data/blog.db          database
+/data/uploads/2026/09/<sha256>.<ext>   images
+/data/backups/         database snapshots
 ```
 
-Имя картинки — хеш содержимого. Файлы неизменяемы, поэтому отдаются с
-долгим кешем, а повторная загрузка того же изображения не создаёт копию.
+An image name is a content hash. Files are immutable, so they are served
+with a long cache, and re-uploading the same image does not create a copy.
 
-## 6. Маршруты
+## 6. Routes
 
-### 6.1 Публичные
+### 6.1 Public
 
-| Метод и путь | Назначение |
+| Method and path | Purpose |
 |---|---|
-| `GET /` | лента опубликованных записей, постранично |
-| `GET /p/:slug` | страница записи |
-| `GET /tag/:slug` | записи с тегом |
-| `GET /search?q=` | полнотекстовый поиск |
-| `GET /feed.xml` | лента подписки |
-| `GET /media/*` | отдача загруженных файлов |
-| `GET /healthz` | процесс жив |
-| `GET /readyz` | миграции применены, база отвечает |
+| `GET /` | the feed of published posts, paginated |
+| `GET /p/:slug` | post page |
+| `GET /tag/:slug` | posts with a tag |
+| `GET /search?q=` | full-text search |
+| `GET /feed.xml` | subscription feed |
+| `GET /media/*` | serving uploaded files |
+| `GET /healthz` | process is alive |
+| `GET /readyz` | migrations applied, database responds |
 
-Черновик по `/p/:slug` отдаётся только при действующей сессии; анониму —
-404, не 403, чтобы не раскрывать существование неопубликованного текста.
+A draft at `/p/:slug` is served only with a valid session; to an anonymous
+visitor it is a 404, not 403, so as not to reveal the existence of an
+unpublished text.
 
-### 6.2 Админка
+### 6.2 Admin
 
-Все пути под `/admin` требуют сессии, кроме страницы входа.
+All paths under `/admin` require a session, except the login page.
 
-| Метод и путь | Назначение |
+| Method and path | Purpose |
 |---|---|
-| `GET /admin/login`, `POST /admin/login` | вход |
-| `POST /admin/logout` | выход |
-| `GET /admin` | список записей с фильтром по статусу |
-| `GET /admin/posts/new` | форма новой записи |
-| `GET /admin/posts/:id/edit` | форма правки |
-| `POST /admin/posts` | создание |
-| `POST /admin/posts/:id` | сохранение |
-| `POST /admin/posts/:id/delete` | удаление |
-| `POST /admin/preview` | HTML предпросмотра для панели редактора |
-| `POST /admin/upload` | загрузка картинки, ответ — готовая строка Markdown |
-| `GET /admin/password`, `POST /admin/password` | смена пароля |
+| `GET /admin/login`, `POST /admin/login` | login |
+| `POST /admin/logout` | logout |
+| `GET /admin` | post list with a status filter |
+| `GET /admin/posts/new` | new post form |
+| `GET /admin/posts/:id/edit` | edit form |
+| `POST /admin/posts` | create |
+| `POST /admin/posts/:id` | save |
+| `POST /admin/posts/:id/delete` | delete |
+| `POST /admin/preview` | preview HTML for the editor panel |
+| `POST /admin/upload` | image upload, the response is a ready Markdown string |
+| `GET /admin/password`, `POST /admin/password` | password change |
 
-Форма записи: заголовок, слаг (заполняется автоматически, правится
-вручную), теги через запятую, текст Markdown. Кнопки «Сохранить
-черновик» и «Опубликовать» — переключают `status`.
+Post form: title, slug (auto-filled, editable by hand), comma-separated
+tags, Markdown text. The "Save draft" and "Publish" buttons toggle `status`.
 
-Слаг опубликованной записи можно изменить, но старый адрес после этого
-перестаёт работать: перенаправлений со старых адресов нет, это за
-пределами области работ.
+A published post's slug can be changed, but the old address stops working
+after that: there are no redirects from old addresses, that is out of scope.
 
-Предпросмотр считает сервер тем же кодом, что и публикация. Второго
-парсера Markdown в браузере нет: иначе превью и результат однажды
-разойдутся.
+Preview renders on the server with the same code as publishing. There is no
+second Markdown parser in the browser: otherwise preview and result would
+one day diverge.
 
-## 7. Аутентификация и безопасность
+## 7. Authentication and security
 
-Пароль хранится как `scrypt`-хеш со случайной солью, через встроенный в
-Node модуль `crypto` — без нативных зависимостей. Сравнение хешей —
-функцией постоянного времени.
+The password is stored as a `scrypt` hash with a random salt, via Node's
+built-in `crypto` module — no native dependencies. Hash comparison is
+constant-time.
 
-Сессия: 32 случайных байта в cookie `httpOnly`, `sameSite=lax`, `secure`
-(отключается переменной окружения для локальной работы по http). Срок 30
-дней, запись в таблице `sessions`, просроченные удаляются при старте и
-раз в сутки. Сессии в базе, а не в памяти: перезапуск пода при деплое не
-разлогинивает.
+Session: 32 random bytes in an `httpOnly`, `sameSite=lax`, `secure` cookie
+(`secure` is turned off by an env var for local http). A 30-day lifetime, a
+row in `sessions`, expired ones removed at startup and once a day. Sessions
+live in the database, not memory: a pod restart on deploy does not log you
+out.
 
-Первый пользователь создаётся при старте из `ADMIN_USERNAME` и
-`ADMIN_PASSWORD`, только если таблица `users` пуста. Дальше пароль
-меняется на странице в админке, лезть в базу руками не нужно.
+The first user is created at startup from `ADMIN_USERNAME` and
+`ADMIN_PASSWORD`, only if the `users` table is empty. After that the
+password is changed on the admin page; there is no need to touch the
+database by hand.
 
-Защиты:
+Protections:
 
-- CSRF-токен в каждой форме, проверка на всех POST.
-- Ограничение частоты входа: 10 попыток за 15 минут с адреса. Счётчик в
-  памяти процесса — этого достаточно при одной реплике.
-- HTML после рендера Markdown проходит через белый список тегов и
-  атрибутов. Свой текст тоже не считается доверенным: вставленный из
-  буфера кусок HTML со скриптом не должен попасть на страницу.
-- Загрузка файлов: тип определяется по сигнатуре содержимого, а не по
-  расширению; белый список jpeg, png, webp, gif; лимит размера;
-  отдача с фиксированным `Content-Type` и заголовками, запрещающими
-  интерпретацию файла как страницы.
-- Заголовки безопасности на всех ответах, включая политику контента.
-- Секреты только из переменных окружения. В репозитории паролей нет.
+- A CSRF token in every form, checked on all POSTs.
+- Login rate limiting: 10 attempts per 15 minutes per address. The counter
+  lives in process memory — enough with one replica.
+- HTML after Markdown rendering goes through a whitelist of tags and
+  attributes. Your own text is not trusted either: a pasted piece of HTML
+  with a script must not reach the page.
+- File upload: type detected by content signature, not extension; a
+  whitelist of jpeg, png, webp, gif; a size limit; served with a fixed
+  `Content-Type` and headers that forbid interpreting the file as a page.
+- Security headers on all responses, including the content policy.
+- Secrets only from environment variables. There are no passwords in the
+  repository.
 
-## 8. Развёртывание
+## 8. Deployment
 
-### 8.1 Образ
+### 8.1 Image
 
-Многостадийный `Dockerfile` на `node:22-bookworm-slim`. Основание на
-glibc, а не alpine, выбрано сознательно: у драйвера SQLite есть готовые
-бинарные сборки под glibc, поэтому образ собирается без компилятора.
-Стадия сборки ставит зависимости, финальная копирует только рабочие,
-процесс запускается не от root.
+A multi-stage `Dockerfile` on `node:22-bookworm-slim`. The glibc base,
+rather than alpine, is chosen deliberately: the SQLite driver has ready
+binary builds for glibc, so the image builds without a compiler. The build
+stage installs dependencies; the final one copies only the production ones,
+and the process runs as non-root.
 
-### 8.2 Helm-чарт (`deploy/helm/blog/`)
+### 8.2 Helm chart (`deploy/helm/blog/`)
 
-Развёртывание оформлено Helm-чартом. Значения по умолчанию в
-`values.yaml`, шаблоны в `templates/` (Deployment, Service, Ingress,
+Deployment is packaged as a Helm chart. Defaults are in `values.yaml`,
+templates in `templates/` (Deployment, Service, Ingress,
 PersistentVolumeClaim, ConfigMap, Secret, Namespace).
 
-- `Deployment`: 1 реплика, `strategy: Recreate`. Две реплики повредили бы
-  базу, а том RWO всё равно не смонтировался бы дважды.
-- `PersistentVolumeClaim`: доступ RWO, 10 Gi, класс хранилища из
+- `Deployment`: 1 replica, `strategy: Recreate`. Two replicas would corrupt
+  the database, and the RWO volume could not be mounted twice anyway.
+- `PersistentVolumeClaim`: RWO access, 10 Gi, storage class from
   `persistence.storageClassName`.
-- `Service`: ClusterIP, порт 80 → 3000.
-- `Ingress`: домен блога (`ingress.host`), TLS (`ingress.tls`), класс
-  nginx. Аннотация cert-manager закомментирована.
-- `ConfigMap`: название сайта, описание, адрес, размер страницы и
-  остальные переменные раздела 8.3, кроме секретов.
-- `Secret`: `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`.
-  В репозитории паролей нет: значения пустые в `values.yaml` и
-  передаются при установке (`--set secrets.sessionSecret=...`), либо
-  подключается готовый Secret через `secrets.existingSecret`.
-- Пробы: `/healthz` — liveness, `/readyz` — readiness. Readiness
-  отвечает «готов» только после применения миграций, чтобы трафик не
-  пришёл в недомигрированную базу.
-- Ресурсы: запрос 100m CPU и 256 Mi памяти, предел 500m и 512 Mi.
-- `securityContext`: не root, корневая файловая система только на
-  чтение, запись разрешена в `/data` и `/tmp`, привилегии сброшены.
+- `Service`: ClusterIP, port 80 → 3000.
+- `Ingress`: blog domain (`ingress.host`), TLS (`ingress.tls`), nginx
+  class. The cert-manager annotation is commented out.
+- `ConfigMap`: site name, description, URL, page size and the rest of the
+  8.3 variables, except secrets.
+- `Secret`: `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`. There
+  are no passwords in the repository: values are empty in `values.yaml` and
+  passed at install (`--set secrets.sessionSecret=...`), or an existing
+  Secret is referenced via `secrets.existingSecret`.
+- Probes: `/healthz` — liveness, `/readyz` — readiness. Readiness answers
+  "ready" only after migrations are applied, so traffic does not hit an
+  un-migrated database.
+- Resources: request 100m CPU and 256 Mi memory, limit 500m and 512 Mi.
+- `securityContext`: non-root, read-only root filesystem, writes allowed to
+  `/data` and `/tmp`, privileges dropped.
 
-Установка:
+Install:
 
     helm install blog ./deploy/helm/blog -n blog --create-namespace \
       --set secrets.sessionSecret=... --set secrets.adminPassword=...
 
-### 8.3 Переменные окружения
+### 8.3 Environment variables
 
-| Переменная | По умолчанию | Смысл |
+| Variable | Default | Meaning |
 |---|---|---|
-| `PORT` | 3000 | порт |
-| `DATA_DIR` | `/data` | корень тома |
-| `SITE_URL` | обязательно | абсолютный адрес, нужен для RSS |
-| `SITE_TITLE`, `SITE_DESCRIPTION`, `SITE_AUTHOR` | обязательно | шапка и лента |
-| `POSTS_PER_PAGE` | 10 | размер страницы ленты |
-| `SESSION_TTL_DAYS` | 30 | срок сессии |
-| `COOKIE_SECURE` | `true` | выключается для локальной работы по http |
-| `UPLOAD_MAX_BYTES` | 10485760 | предел размера картинки |
-| `BACKUP_KEEP` | 7 | сколько снимков хранить |
-| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | обязательно | только для создания первого пользователя |
+| `PORT` | 3000 | port |
+| `DATA_DIR` | `/data` | volume root |
+| `SITE_URL` | required | absolute URL, needed for RSS |
+| `SITE_TITLE`, `SITE_DESCRIPTION`, `SITE_AUTHOR` | required | header and feed |
+| `POSTS_PER_PAGE` | 10 | feed page size |
+| `SESSION_TTL_DAYS` | 30 | session lifetime |
+| `COOKIE_SECURE` | `true` | turned off for local http |
+| `UPLOAD_MAX_BYTES` | 10485760 | image size limit |
+| `BACKUP_KEEP` | 7 | how many snapshots to keep |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | required | only for creating the first user |
 
-### 8.4 Бэкапы
+### 8.4 Backups
 
-Раз в сутки приложение делает снимок базы средствами SQLite
-(`VACUUM INTO`) в `/data/backups/blog-ГГГГ-ММ-ДД.db` и оставляет
-последние `BACKUP_KEEP` файлов.
+Once a day the app takes a database snapshot via SQLite (`VACUUM INTO`)
+into `/data/backups/blog-YYYY-MM-DD.db` and keeps the last `BACKUP_KEEP`
+files.
 
-Отдельный `CronJob` не используется сознательно: том RWO монтируется
-только на одном узле, и под бэкапа рискует быть назначен на другой узел
-и не запуститься.
+A separate `CronJob` is deliberately not used: the RWO volume mounts on only
+one node, and the backup pod risks being scheduled onto another node and
+failing to start.
 
-## 9. Тестирование
+## 9. Testing
 
-Разработка ведётся по TDD. Тесты на встроенном раннере Node
-(`node --test`), запуск `npm test`.
+Development is TDD. Tests use Node's built-in runner (`node --test`), run
+with `npm test`.
 
-- Домен: вызов чистых функций — слаги, рендер, санитайз, анонс.
-- Репозитории: временная база в файле, создаваемая на каждый тест.
-- Маршруты: внутренняя инъекция запросов Fastify, без поднятия сети.
+- Domain: calling pure functions — slugs, render, sanitize, excerpt.
+- Repositories: a temporary file database, created per test.
+- Routes: Fastify's internal request injection, without bringing up the
+  network.
 
-Обязательные сценарии:
+Required scenarios:
 
-1. Черновик не виден анониму (404) и виден владельцу с сессией.
-2. Вход с неверным паролем не создаёт сессию.
-3. Страницы `/admin` без сессии ведут на форму входа.
-4. POST без CSRF-токена отклоняется.
-5. Поиск находит запись по слову из текста и не находит черновик.
-6. Лента `/feed.xml` — валидный XML с абсолютными ссылками.
-7. Файл не из белого списка типов отклоняется при загрузке.
-8. Скрипт внутри Markdown не попадает в отданный HTML.
-9. Слаг из русского заголовка транслитерируется: «Привет, мир» →
-   `privet-mir`; при столкновении добавляется числовой суффикс.
-10. Повторный запуск миграций ничего не меняет.
+1. A draft is not visible to an anonymous visitor (404) and is visible to
+   the owner with a session.
+2. A login with a wrong password does not create a session.
+3. `/admin` pages without a session lead to the login form.
+4. A POST without a CSRF token is rejected.
+5. Search finds a post by a word in the text and does not find a draft.
+6. The `/feed.xml` feed is valid XML with absolute links.
+7. A file outside the type whitelist is rejected on upload.
+8. A script inside Markdown does not reach the served HTML.
+9. A slug from a Russian title is transliterated: "Привет, мир" →
+   `privet-mir`; on collision a numeric suffix is added.
+10. Re-running migrations changes nothing.
 
-## 10. Порядок работ
+## 10. Work order
 
-Девять срезов, каждый оставляет систему в рабочем состоянии.
+Nine slices, each leaving the system in a working state.
 
-1. **Каркас.** Fastify, конфиг из окружения, открытие базы, миграции,
-   `/healthz` и `/readyz`, первый тест, `npm test` зелёный.
-2. **Домен.** Слаг с транслитерацией, рендер Markdown, санитайз, анонс.
-3. **Записи.** Репозиторий и админский CRUD с черновиками, пока без
-   входа. Редактор с серверным превью.
-4. **Вход.** Пользователи, сессии, CSRF, ограничение частоты, защита
-   `/admin`, смена пароля.
-5. **Публичная часть.** Лента с постраничностью, страница записи, теги.
-6. **Картинки.** Загрузка, проверка сигнатуры, отдача из `/media`.
-7. **Поиск и RSS.** Таблица FTS5 с триггерами, страница поиска,
+1. **Scaffold.** Fastify, config from environment, database open,
+   migrations, `/healthz` and `/readyz`, the first test, `npm test` green.
+2. **Domain.** Slug with transliteration, Markdown render, sanitize,
+   excerpt.
+3. **Posts.** Repository and admin CRUD with drafts, no login yet. An
+   editor with server-side preview.
+4. **Login.** Users, sessions, CSRF, rate limiting, `/admin` protection,
+   password change.
+5. **Public part.** Feed with pagination, post page, tags.
+6. **Images.** Upload, signature check, serving from `/media`.
+7. **Search and RSS.** An FTS5 table with triggers, search page,
    `/feed.xml`.
-8. **Оформление.** Простая читаемая типографика, адаптивная вёрстка.
-9. **Кластер.** Dockerfile, манифесты, бэкапы, деплой, проверка на
-   рабочем домене.
+8. **Styling.** Simple readable typography, responsive layout.
+9. **Cluster.** Dockerfile, manifests, backups, deploy, check on the live
+   domain.
 
-## 11. Данные, нужные перед девятым срезом
+## 11. Data needed before the ninth slice
 
-От владельца кластера потребуются: доменное имя блога, имя класса
-хранилища для PVC, класс ingress и способ выпуска сертификата (есть ли
-cert-manager и имя выпускающего). До получения этих данных манифесты
-пишутся с параметрами по умолчанию: класс хранилища кластера, ingress
-класса `nginx`, аннотация cert-manager закомментирована.
+The cluster owner must provide: the blog domain name, the storage class
+name for the PVC, the ingress class and the certificate issuance method
+(whether cert-manager exists and the issuer name). Until these are known,
+the manifests are written with default parameters: the cluster's storage
+class, the `nginx` ingress class, the cert-manager annotation commented out.
