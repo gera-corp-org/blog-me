@@ -30,6 +30,20 @@ test('лента разбита на страницы', async () => {
   await cleanup();
 });
 
+test('карточка в ленте выводит теги ссылками', async () => {
+  // Вывод тегов на карточке ленты никто не проверял — его можно было бы
+  // незаметно убрать, и ни один тест бы не заметил.
+  const { app, cleanup } = await createTestApp();
+  seedPost(app, { title: 'С тегами', slug: 's-tegami', tags: ['Код', 'Заметки'] });
+
+  const response = await app.inject({ method: 'GET', url: '/' });
+
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.includes('<a class="tag" href="/tag/kod">#Код</a>'));
+  assert.ok(response.body.includes('<a class="tag" href="/tag/zametki">#Заметки</a>'));
+  await cleanup();
+});
+
 test('страница записи отдаёт разметку тела', async () => {
   const { app, cleanup } = await createTestApp();
   seedPost(app, { title: 'Привет, мир', body: 'Текст с **жирным**.', tags: ['Заметки'] });

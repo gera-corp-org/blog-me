@@ -4,6 +4,6 @@
   <p class="empty">По запросу «<%= it.q %>» ничего не нашлось.</p>
 <% } %>
 <% it.posts.forEach(function (post) { %>
-  <%~ include('/partials/post-card', { post, formatDate: it.formatDate }) %>
+  <%~ include('/partials/post-card', { post, tags: post.tags, formatDate: it.formatDate }) %>
 <% }) %>
 <%~ include('partials/foot', it) %>
