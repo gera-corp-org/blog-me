@@ -1,8 +1,39 @@
-<article class="post-card">
-  <h2><a href="/p/<%= it.post.slug %>"><%= it.post.title %></a></h2>
-  <p class="meta"><time datetime="<%= it.post.published_at %>"><%= it.formatDate(it.post.published_at) %></time></p>
-  <p><%= it.post.excerpt %></p>
-  <% if (it.tags && it.tags.length > 0) { %>
-    <p class="tags"><% it.tags.forEach(function (tag) { %><a class="tag" href="/tag/<%= tag.slug %>">#<%= tag.name %></a> <% }) %></p>
+<% if (it.featured) { %>
+<article class="post-featured">
+  <% if (it.post.cover) { %>
+    <a class="post-cover" href="/p/<%= it.post.slug %>" tabindex="-1" aria-hidden="true">
+      <img src="<%= it.post.cover %>" alt="" loading="lazy">
+    </a>
   <% } %>
+  <div class="post-featured-text">
+    <h2><a href="/p/<%= it.post.slug %>"><%= it.post.title %></a></h2>
+    <p class="excerpt"><%= it.post.excerpt %></p>
+    <p class="meta">
+      <time datetime="<%= it.post.published_at %>"><%= it.formatDate(it.post.published_at) %></time>
+      <% if (it.post.tags && it.post.tags.length > 0) { %>
+        <span class="tags"><% it.post.tags.forEach(function (tag) { %><a class="tag" href="/tag/<%= tag.slug %>">#<%= tag.name %></a> <% }) %></span>
+      <% } %>
+    </p>
+  </div>
 </article>
+<% } else { %>
+<article class="post-row">
+  <% if (it.post.cover) { %>
+    <a class="row-thumb" href="/p/<%= it.post.slug %>" tabindex="-1" aria-hidden="true">
+      <img src="<%= it.post.cover %>" alt="" loading="lazy">
+    </a>
+  <% } else { %>
+    <span class="row-letter tone-<%= it.post.tone %>" aria-hidden="true"><%= it.post.letter %></span>
+  <% } %>
+  <div class="row-text">
+    <h2><a href="/p/<%= it.post.slug %>"><%= it.post.title %></a></h2>
+    <p class="excerpt"><%= it.post.excerpt %></p>
+    <p class="meta">
+      <time datetime="<%= it.post.published_at %>"><%= it.formatDate(it.post.published_at) %></time>
+      <% if (it.post.tags && it.post.tags.length > 0) { %>
+        <span class="tags"><% it.post.tags.forEach(function (tag) { %><a class="tag" href="/tag/<%= tag.slug %>">#<%= tag.name %></a> <% }) %></span>
+      <% } %>
+    </p>
+  </div>
+</article>
+<% } %>

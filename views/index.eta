@@ -1,15 +1,33 @@
 <%~ include('partials/head', it) %>
-<% if (it.posts.length === 0) { %>
-  <p class="empty">Пока ни одной записи.</p>
+<% if (it.page === 1) { %>
+  <section class="hero">
+    <h1><%= it.site.title %></h1>
+    <% if (it.site.description) { %><p class="hero-lead"><%= it.site.description %></p><% } %>
+    <% if (it.posts.length > 0) { %>
+      <a class="button" href="/p/<%= it.posts[0].slug %>">Читать последнюю запись</a>
+    <% } %>
+  </section>
 <% } %>
-<% it.posts.forEach(function (post) { %>
-  <%~ include('/partials/post-card', { post, tags: post.tags, formatDate: it.formatDate }) %>
+<% if (it.posts.length === 0) { %>
+  <p class="empty">Здесь пока пусто. Первая запись появится, когда будет что сказать.</p>
+<% } %>
+<% it.posts.forEach(function (post, index) { %>
+  <% if (index === 0 && it.page === 1) { %>
+    <%~ include('/partials/post-card', { post, featured: true, formatDate: it.formatDate }) %>
+    <% if (it.posts.length > 1) { %>
+      <h2 class="section-title">Ещё записи</h2>
+      <div class="post-list">
+    <% } %>
+  <% } else { %>
+    <%~ include('/partials/post-card', { post, featured: false, formatDate: it.formatDate }) %>
+  <% } %>
 <% }) %>
+<% if (it.posts.length > 1 && it.page === 1) { %></div><% } %>
 <% if (it.pages > 1) { %>
   <nav class="pagination">
-    <% if (it.page > 1) { %><a href="/?page=<%= it.page - 1 %>">Новее</a><% } %>
+    <% if (it.page > 1) { %><a href="/?page=<%= it.page - 1 %>">Новее</a><% } else { %><span></span><% } %>
     <span><%= it.page %> из <%= it.pages %></span>
-    <% if (it.page < it.pages) { %><a href="/?page=<%= it.page + 1 %>">Старее</a><% } %>
+    <% if (it.page < it.pages) { %><a href="/?page=<%= it.page + 1 %>">Старее</a><% } else { %><span></span><% } %>
   </nav>
 <% } %>
 <%~ include('partials/foot', it) %>

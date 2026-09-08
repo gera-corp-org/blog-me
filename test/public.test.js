@@ -90,3 +90,14 @@ test('несуществующий адрес отдаёт страницу 404'
   assert.match(response.headers['content-type'], /text\/html/);
   await cleanup();
 });
+
+test('страница «Обо мне» открывается', async () => {
+  const { app, cleanup } = await createTestApp();
+
+  const response = await app.inject({ method: 'GET', url: '/about' });
+
+  assert.equal(response.statusCode, 200);
+  assert.match(response.headers['content-type'], /text\/html/);
+  assert.ok(response.body.includes('Обо мне'));
+  await cleanup();
+});

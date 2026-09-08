@@ -1,0 +1,19 @@
+<%~ include('partials/head', it) %>
+<article class="post page">
+  <h1>Обо мне</h1>
+  <div class="post-body">
+    <p>
+      Привет. Здесь я пишу о коде, типографике и тихих вечерах — без
+      расписания и без обязательств перед кем-либо, включая себя.
+    </p>
+    <p>
+      Текст этой страницы правится в файле <code>views/about.eta</code>:
+      это обычный шаблон, разметка внутри — самая простая.
+    </p>
+    <p>
+      Написать мне: <a href="mailto:exandore@gmail.com">exandore@gmail.com</a>.
+      Следить за записями удобнее через <a href="/feed.xml">ленту подписки</a>.
+    </p>
+  </div>
+</article>
+<%~ include('partials/foot', it) %>

@@ -1,3 +1,4 @@
+import { toCard } from '../../domain/card.js';
 import { paginate } from '../../domain/pagination.js';
 
 export async function publicPostRoutes(app) {
@@ -13,7 +14,7 @@ export async function publicPostRoutes(app) {
 
     return reply.view('index.eta', {
       pageTitle: app.config.siteTitle,
-      posts: posts.map((post) => ({ ...post, tags: tagsByPost.get(post.id) })),
+      posts: posts.map((post) => toCard(post, tagsByPost.get(post.id))),
       page,
       pages,
       user: request.user,
@@ -49,7 +50,7 @@ export async function publicPostRoutes(app) {
     return reply.view('tag.eta', {
       pageTitle: `Тег «${tag.name}» — ${app.config.siteTitle}`,
       tag,
-      posts: app.posts.listByTag(tag.slug, { limit, offset }),
+      posts: app.posts.listByTag(tag.slug, { limit, offset }).map((post) => toCard(post)),
       page,
       pages,
       user: request.user,

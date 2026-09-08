@@ -3,7 +3,9 @@
 <% if (it.q && it.posts.length === 0) { %>
   <p class="empty">По запросу «<%= it.q %>» ничего не нашлось.</p>
 <% } %>
+<div class="post-list">
 <% it.posts.forEach(function (post) { %>
-  <%~ include('/partials/post-card', { post, tags: post.tags, formatDate: it.formatDate }) %>
+  <%~ include('/partials/post-card', { post, featured: false, formatDate: it.formatDate }) %>
 <% }) %>
+</div>
 <%~ include('partials/foot', it) %>

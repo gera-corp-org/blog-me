@@ -10,6 +10,7 @@ import { createPostRepository } from './db/posts.js';
 import { createTagRepository } from './db/tags.js';
 import { formatDate } from './domain/format.js';
 import { publicPostRoutes } from './routes/public/posts.js';
+import { aboutRoutes } from './routes/public/about.js';
 import { searchRoutes } from './routes/public/search.js';
 import { feedRoutes } from './routes/public/feed.js';
 import { adminAuthRoutes } from './routes/admin/auth.js';
@@ -112,6 +113,7 @@ export function buildServer({ config, db, logger = false }) {
   });
 
   app.register(publicPostRoutes);
+  app.register(aboutRoutes);
   app.register(searchRoutes);
   app.register(feedRoutes);
   app.register(adminAuthRoutes);

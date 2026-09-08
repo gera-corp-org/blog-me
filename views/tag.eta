@@ -1,8 +1,10 @@
 <%~ include('partials/head', it) %>
 <h1>Записи с тегом «<%= it.tag.name %>»</h1>
+<div class="post-list">
 <% it.posts.forEach(function (post) { %>
-  <%~ include('/partials/post-card', { post, formatDate: it.formatDate }) %>
+  <%~ include('/partials/post-card', { post, featured: false, formatDate: it.formatDate }) %>
 <% }) %>
+</div>
 <% if (it.pages > 1) { %>
   <nav class="pagination">
     <% if (it.page > 1) { %><a href="/tag/<%= it.tag.slug %>?page=<%= it.page - 1 %>">Новее</a><% } %>

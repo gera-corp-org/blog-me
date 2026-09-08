@@ -1,3 +1,4 @@
+import { toCard } from '../../domain/card.js';
 import { toMatchQuery } from '../../domain/search.js';
 
 const LIMIT = 50;
@@ -11,7 +12,7 @@ export async function searchRoutes(app) {
     return reply.view('search.eta', {
       pageTitle: query ? `Поиск: ${query}` : 'Поиск',
       q: query,
-      posts: posts.map((post) => ({ ...post, tags: tagsByPost.get(post.id) })),
+      posts: posts.map((post) => toCard(post, tagsByPost.get(post.id))),
       user: request.user,
       csrf: request.csrfToken,
     });

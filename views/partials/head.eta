@@ -9,18 +9,20 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="site-title" href="/"><%= it.site.title %></a>
-      <form class="search-form" action="/search" method="get" role="search">
-        <input type="search" name="q" value="<%= it.q %>" placeholder="Поиск" aria-label="Поиск по записям">
-      </form>
-      <% if (it.user) { %>
-        <span class="admin-links">
+      <a class="site-title" href="/"><span class="prompt-host">gera@blog</span>:<span class="prompt-path">~/записки</span>$<span class="cursor" aria-hidden="true"></span></a>
+      <nav class="site-nav">
+        <a href="/">Записи</a>
+        <a href="/about">Обо мне</a>
+        <form class="search-form" action="/search" method="get" role="search">
+          <input type="search" name="q" value="<%= it.q %>" placeholder="Поиск" aria-label="Поиск по записям">
+        </form>
+        <% if (it.user) { %>
           <a href="/admin">Записи</a>
           <form method="post" action="/admin/logout" class="inline-form">
             <input type="hidden" name="_csrf" value="<%= it.csrf %>">
             <button type="submit" class="link-button">Выйти</button>
           </form>
-        </span>
-      <% } %>
+        <% } %>
+      </nav>
     </header>
     <main>

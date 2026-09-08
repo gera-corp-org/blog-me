@@ -6,6 +6,8 @@
     <% if (it.post.status === 'draft') { %><span class="draft-badge">черновик</span><% } %>
   </p>
   <div class="post-body"><%~ it.post.body_html %></div>
-  <p class="tags"><% it.tags.forEach(function (tag) { %><a class="tag" href="/tag/<%= tag.slug %>">#<%= tag.name %></a> <% }) %></p>
+  <% if (it.tags.length > 0) { %>
+    <p class="tags post-tags"><% it.tags.forEach(function (tag) { %><a class="tag" href="/tag/<%= tag.slug %>">#<%= tag.name %></a> <% }) %></p>
+  <% } %>
 </article>
 <%~ include('partials/foot', it) %>
