@@ -3,6 +3,7 @@ import { buildServer } from './server.js';
 import { openDatabase } from './db/index.js';
 import { applyMigrations } from './db/migrate.js';
 import { ensureAdminUser } from './bootstrap.js';
+import { startBackupSchedule } from './backup.js';
 
 const config = loadConfig();
 const db = openDatabase(config.databasePath);
@@ -24,6 +25,7 @@ if (config.isProduction && config.sessionSecret === 'небезопасный-к
 
 await app.ready();
 await ensureAdminUser({ users: app.users, config, log: app.log });
+startBackupSchedule({ db, config, log: app.log });
 app.sessions.purgeExpired();
 
 try {
