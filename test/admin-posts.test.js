@@ -26,6 +26,21 @@ test('создаёт черновик и уводит на страницу пр
   await cleanup();
 });
 
+test('создание записи без ключа CSRF отклоняется, даже с действующей сессией', async () => {
+  const { app, cleanup } = await createTestApp();
+  const { cookie } = await login(app);
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/admin/posts',
+    ...post(cookie, { title: 'Без ключа', slug: '', tags: '', body: 'Текст', action: 'draft' }),
+  });
+
+  assert.equal(response.statusCode, 403);
+  assert.equal(app.posts.findBySlug('bez-klyucha'), undefined);
+  await cleanup();
+});
+
 test('кнопка «Опубликовать» ставит статус published', async () => {
   const { app, cleanup } = await createTestApp();
   const { cookie, csrf } = await login(app);
@@ -123,19 +138,36 @@ test('удаление убирает запись', async () => {
   await cleanup();
 });
 
-test('превью возвращает тот же HTML, что и публикация', async () => {
+test('превью возвращает тот же HTML, что реально сохраняется при публикации', async () => {
   const { app, cleanup } = await createTestApp();
   const { cookie, csrf } = await login(app);
+  // В одном исходнике сразу разметка, типографика и вставленный скрипт:
+  // сравнение по подстроке пропустило бы подмену разборщика превью на
+  // другой, без санитайзера, — здесь так подменить незаметно не выйдет.
+  const bodyMd = 'Текст со **сноской** (c) 2026 -- пример... <script>alert(1)</script>';
+
+  const created = await app.inject({
+    method: 'POST',
+    url: '/admin/posts',
+    ...post(cookie, { title: 'Проверка превью', slug: '', tags: '', body: bodyMd, action: 'draft', _csrf: csrf }),
+  });
+  assert.equal(created.statusCode, 303);
+  const id = Number(created.headers.location.match(/\/admin\/posts\/(\d+)\/edit/)[1]);
+  const saved = app.posts.findById(id);
 
   const preview = await app.inject({
     method: 'POST',
     url: '/admin/preview',
     headers: { cookie, 'x-csrf-token': csrf },
-    payload: { body: 'Текст со **сноской**' },
+    payload: { body: bodyMd },
   });
 
   assert.equal(preview.statusCode, 200);
-  assert.match(preview.json().html, /<strong>сноской<\/strong>/);
+  // Убеждаемся, что сравнение вообще что-то различает: в сохранённом теле
+  // есть и разметка, и типографика, а скрипт вырезан.
+  assert.match(saved.body_html, /<strong>сноской<\/strong>/);
+  assert.ok(!saved.body_html.includes('<script>'), 'скрипт должен быть вырезан санитайзером');
+  assert.equal(preview.json().html, saved.body_html);
   await cleanup();
 });
 

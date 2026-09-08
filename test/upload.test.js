@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createTestApp, login } from './helpers/app.js';
 import { detectImageType } from '../src/domain/imageType.js';
@@ -46,6 +46,23 @@ test('загружает картинку и возвращает готовую
   assert.match(url, /^\/media\/\d{4}\/\d{2}\/[0-9a-f]{64}\.png$/);
   assert.equal(markdown, `![](${url})`);
   assert.ok(existsSync(join(config.uploadsDir, url.replace('/media/', ''))));
+  await cleanup();
+});
+
+test('загрузка без ключа CSRF отклоняется, даже с действующей сессией', async () => {
+  const { app, config, cleanup } = await createTestApp();
+  const { cookie } = await login(app);
+  const body = multipart(PNG);
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/admin/upload',
+    headers: { cookie, 'content-type': body.contentType },
+    payload: body.payload,
+  });
+
+  assert.equal(response.statusCode, 403);
+  assert.deepEqual(readdirSync(config.uploadsDir, { recursive: true }), [], 'файл не должен был сохраниться');
   await cleanup();
 });
 
