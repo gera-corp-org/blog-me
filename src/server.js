@@ -17,17 +17,14 @@ import { adminUploadRoutes } from './routes/admin/upload.js';
 import securityPlugin from './plugins/security.js';
 import authPlugin from './plugins/auth.js';
 
-// Библиотеки говорят по-английски и норовят упомянуть путь на диске
-// (например, отказ fastify-static показать содержимое каталога, или
-// EACCES/ENOTDIR при работе с файлами). Наружу уходит только код и
-// короткая строка из этой таблицы, подробности — в лог.
 const ERROR_MESSAGES = {
   400: 'Некорректный запрос',
-  403: 'Доступ запрещён',
+  403: 'Запрос отклонён',
   413: 'Файл слишком большой',
-  415: 'Недопустимый тип содержимого',
+  415: 'Неподдерживаемый тип файла',
+  429: 'Слишком много запросов',
+  500: 'Внутренняя ошибка сервера',
 };
-const DEFAULT_ERROR_MESSAGE = 'Внутренняя ошибка сервера';
 
 export function buildServer({ config, db, logger = false }) {
   const app = Fastify({ logger, trustProxy: config.trustProxy });
@@ -81,24 +78,19 @@ export function buildServer({ config, db, logger = false }) {
   app.setNotFoundHandler((request, reply) =>
     reply.code(404).view('404.eta', { pageTitle: 'Не найдено' }));
 
-  // Общий обработчик: наружу — только код и короткая русская строка,
-  // подробности (включая пути на сервере) остаются в логе. Переход по
-  // ссылке получает страницу, запрос из скрипта редактора — JSON: браузер
-  // отличается по заголовку Accept, который для перехода по ссылке
-  // включает text/html, а для fetch() по умолчанию — нет.
+  // Тела ошибок пишем сами: сообщения библиотек приходят по-английски и
+  // могут содержать пути на сервере. Наружу уходит код и короткая русская
+  // строка, подробности — в лог. Браузер узнаём по заголовку Accept:
+  // переходу по ссылке отдаём страницу, запросу из редактора — JSON.
   app.setErrorHandler((error, request, reply) => {
-    const statusCode = Number.isInteger(error.statusCode) && error.statusCode >= 400 && error.statusCode < 600
-      ? error.statusCode
-      : 500;
-    if (statusCode >= 500) {
-      request.log.error(error, 'необработанная ошибка');
-    }
-    const message = ERROR_MESSAGES[statusCode] ?? DEFAULT_ERROR_MESSAGE;
+    request.log.error(error);
+    const status = error.statusCode >= 400 && error.statusCode < 500 ? error.statusCode : 500;
+    const message = ERROR_MESSAGES[status] ?? 'Внутренняя ошибка сервера';
 
-    if (request.headers.accept?.includes('text/html')) {
-      return reply.code(statusCode).view('500.eta', { pageTitle: 'Ошибка', user: request.user });
+    if ((request.headers.accept ?? '').includes('text/html')) {
+      return reply.code(status).view('500.eta', { pageTitle: 'Ошибка', message });
     }
-    return reply.code(statusCode).send({ error: message });
+    return reply.code(status).send({ error: message });
   });
 
   app.get('/healthz', async () => ({ status: 'ok' }));
