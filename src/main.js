@@ -25,8 +25,9 @@ if (config.isProduction && config.sessionSecret === 'небезопасный-к
 
 await app.ready();
 await ensureAdminUser({ users: app.users, config, log: app.log });
-startBackupSchedule({ db, config, log: app.log });
-app.sessions.purgeExpired();
+// Снимок базы и чистка просроченных сессий идут одним расписанием: оба
+// нужны при старте и раз в сутки, второй таймер был бы лишним.
+startBackupSchedule({ db, sessions: app.sessions, config, log: app.log });
 
 try {
   await app.listen({ port: config.port, host: config.host });

@@ -37,11 +37,15 @@ export function makeBackup(db, backupsDir, keep, now = new Date()) {
   return target;
 }
 
-export function startBackupSchedule({ db, config, log }) {
+export function startBackupSchedule({ db, sessions, config, log }) {
+  // Просроченные сессии чистятся на том же суточном тике, что и снимок:
+  // отдельного таймера под них заводить незачем, а без него таблица
+  // sessions росла бы без предела между редкими перезапусками.
   const run = () => {
     try {
       const file = makeBackup(db, config.backupsDir, config.backupKeep);
       log?.info(`снимок базы: ${file}`);
+      sessions.purgeExpired();
     } catch (error) {
       log?.error(error, 'снимок базы не удался');
     }
