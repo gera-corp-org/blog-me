@@ -1,0 +1,72 @@
+# Default values. Secrets are empty — set at install time, never committed to the repo.
+
+# Name overrides (optional). By default, resource names = release name,
+# so `helm install blog ...` produces the same names kustomize did: blog, blog-config, ...
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: gera-blog
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# Namespace. true — the chart creates the Namespace itself (as kustomize did).
+# If false — install with `--create-namespace`.
+namespace:
+  create: true
+  name: blog
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: blog.example.com
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "12m"
+    # cert-manager.io/cluster-issuer: issuer-name
+  tls:
+    enabled: true
+    secretName: blog-tls
+
+persistence:
+  enabled: true
+  size: 10Gi
+  accessMode: ReadWriteOnce
+  # storageClassName: specify the cluster storage class
+  storageClassName: ""
+
+# Environment variables from ConfigMap (envFrom).
+config:
+  SITE_URL: "https://blog.example.com"
+  SITE_TITLE: "Blog"
+  SITE_DESCRIPTION: "Personal notes"
+  SITE_AUTHOR: "Gera"
+  # Ingress sits on the cluster's private network, so its visitor-address header
+  # can be trusted. Without this, the login rate limit becomes shared.
+  TRUST_PROXY: "loopback,uniquelocal"
+  POSTS_PER_PAGE: "10"
+  SESSION_TTL_DAYS: "30"
+  COOKIE_SECURE: "true"
+  UPLOAD_MAX_BYTES: "10485760"
+  BACKUP_KEEP: "7"
+
+# Environment variables from Secret (envFrom).
+secrets:
+  # If set — the chart uses this existing Secret and does not create its own.
+  existingSecret: ""
+  sessionSecret: ""    # required: long random string
+  adminUsername: "gera"
+  adminPassword: ""    # required
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

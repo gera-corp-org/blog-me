@@ -1,20 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: blog
+  name: {{ include "blog.fullname" . }}
   labels:
-    app: blog
+    {{- include "blog.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   strategy:
+    # Single replica: the SQLite file and RWO volume don't allow two writers.
     type: Recreate
   selector:
     matchLabels:
-      app: blog
+      {{- include "blog.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: blog
+        {{- include "blog.selectorLabels" . | nindent 8 }}
     spec:
       securityContext:
         runAsNonRoot: true
@@ -24,16 +25,17 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: blog
-          image: gera-blog:1.0.0
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
               containerPort: 3000
           envFrom:
             - configMapRef:
-                name: blog-config
+                name: {{ include "blog.fullname" . }}-config
             - secretRef:
-                name: blog-secrets
+                name: {{ include "blog.secretName" . }}
           env:
             - name: DATA_DIR
               value: /data
@@ -55,12 +57,7 @@ spec:
             initialDelaySeconds: 2
             periodSeconds: 10
           resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
+            {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -68,7 +65,11 @@ spec:
               drop: ["ALL"]
       volumes:
         - name: data
+          {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
-            claimName: blog-data
+            claimName: {{ include "blog.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         - name: tmp
           emptyDir: {}

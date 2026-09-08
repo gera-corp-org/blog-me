@@ -1,0 +1,26 @@
+Blog installed. Secrets and the address are set at install time; the default values have none.
+
+Install example:
+
+  helm install blog ./deploy/helm/blog \
+    --namespace blog --create-namespace \
+    --set secrets.sessionSecret="$(openssl rand -hex 32)" \
+    --set secrets.adminPassword="your-password" \
+    --set config.SITE_URL="https://blog.example.com" \
+    --set ingress.host="blog.example.com"
+
+If the Secret already exists outside the chart — specify its name and don't pass passwords:
+
+  helm install blog ./deploy/helm/blog \
+    --set secrets.existingSecret="blog-secrets"
+
+Upgrade:
+
+  helm upgrade blog ./deploy/helm/blog --reuse-values
+
+Uninstall:
+
+  helm uninstall blog
+{{- if .Values.namespace.create }}
+  kubectl delete namespace {{ .Values.namespace.name }}
+{{- end }}
