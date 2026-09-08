@@ -90,7 +90,7 @@ export function createPostRepository(db) {
       return sql(`SELECT ${PREFIXED} FROM posts p
                   JOIN posts_fts ON posts_fts.rowid = p.id
                   WHERE posts_fts MATCH ? AND p.status = 'published'
-                  ORDER BY rank LIMIT ?`).all(match, limit);
+                  ORDER BY rank, p.id DESC LIMIT ?`).all(match, limit);
     },
   };
 }

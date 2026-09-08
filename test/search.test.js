@@ -68,6 +68,23 @@ test('индекс поспевает за правкой и удалением'
   await cleanup();
 });
 
+test('при равной релевантности порядок выдачи определён', async () => {
+  // У двух записей совпадают и заголовок, и текст, поэтому релевантность
+  // одинакова. Без вторичного ключа сортировки порядок остался бы на
+  // усмотрение движка — как в соседних выборках, разводим его по id.
+  const { app, cleanup } = await createTestApp();
+  seedPost(app, { title: 'Одинаково', slug: 'pervaya', body: 'совпадающий текст' });
+  seedPost(app, { title: 'Одинаково', slug: 'vtoraya', body: 'совпадающий текст' });
+
+  const response = await app.inject({ method: 'GET', url: '/search?q=совпадающий' });
+  const first = response.body.indexOf('/p/vtoraya');
+  const second = response.body.indexOf('/p/pervaya');
+
+  assert.ok(first >= 0 && second >= 0, 'найдены не обе записи');
+  assert.ok(first < second, 'новая запись должна идти первой');
+  await cleanup();
+});
+
 test('пустой запрос не ломает страницу', async () => {
   const { app, cleanup } = await createTestApp();
 
