@@ -3,18 +3,23 @@ import { join } from 'node:path';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NAME_PATTERN = /^blog-\d{4}-\d{2}-\d{2}\.db$/;
+const TEMPORARY_PATTERN = /^blog-\d{4}-\d{2}-\d{2}\.db\.tmp$/;
 
 export function makeBackup(db, backupsDir, keep, now = new Date()) {
   mkdirSync(backupsDir, { recursive: true });
 
   const target = join(backupsDir, `blog-${now.toISOString().slice(0, 10)}.db`);
 
-  // Снимок пишется во временный файл и переименовывается. Переименование
-  // мгновенно, поэтому под именем снимка не может оказаться недописанный
-  // файл, если под убьют посреди работы: обрывок останется с расширением
-  // .tmp, не попадёт в ротацию и не будет принят за годный снимок.
   const temporary = `${target}.tmp`;
-  rmSync(temporary, { force: true });
+
+  // Любой .tmp, найденный здесь, — обрывок прошлого прерванного снимка:
+  // снимок делается синхронно, двух одновременно быть не может. Обрывки за
+  // прошлые числа под шаблон имени снимка не подходят и в ротацию не
+  // попадают, поэтому иначе копились бы вечно, каждый размером с базу.
+  for (const orphan of readdirSync(backupsDir).filter((name) => TEMPORARY_PATTERN.test(name))) {
+    rmSync(join(backupsDir, orphan), { force: true });
+  }
+
   db.prepare('VACUUM INTO ?').run(temporary);
   rmSync(target, { force: true });
   renameSync(temporary, target);
