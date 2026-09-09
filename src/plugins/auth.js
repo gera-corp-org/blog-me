@@ -65,6 +65,13 @@ async function authPlugin(app) {
 
     if (CSRF_SKIP.some((prefix) => request.url.startsWith(prefix))) return;
 
+    // Admin pages must never be cached: the HTML embeds a CSRF token that must
+    // stay in sync with the csrf cookie. A shared cache (Cloudflare, CDN) can
+    // serve stale HTML with an old token while the cookie is fresh → 403.
+    if (request.url.startsWith('/admin')) {
+      reply.header('Cache-Control', 'no-store');
+    }
+
     const rawCsrf = request.cookies[CSRF_COOKIE];
     const unsignedCsrf = rawCsrf ? request.unsignCookie(rawCsrf) : { valid: false };
     if (unsignedCsrf.valid) {
