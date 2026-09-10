@@ -429,6 +429,47 @@ h1, h2, h3 {
   vertical-align: top;
 }
 
+/* Footnotes */
+
+.post-body sup.footnote-ref a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.post-body sup.footnote-ref a:hover {
+  text-decoration: underline;
+}
+
+.post-body hr.footnotes-sep {
+  margin-top: 2.5rem;
+}
+
+.post-body section.footnotes {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  font-size: var(--t-sm);
+}
+
+.post-body section.footnotes ol {
+  padding-left: 1.4rem;
+}
+
+.post-body section.footnotes li {
+  margin-bottom: 0.6rem;
+}
+
+.post-body .footnote-backref {
+  color: var(--accent);
+  text-decoration: none;
+  margin-left: 0.3rem;
+}
+
+.post-body .footnote-backref:hover {
+  text-decoration: underline;
+}
+
 .post-tags {
   margin-top: 3rem;
   padding-top: 1.2rem;

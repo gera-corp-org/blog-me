@@ -35,3 +35,33 @@ test('сохраняет блоки кода', () => {
   const html = renderMarkdown('```\nconst a = 1;\n```');
   assert.match(html, /<pre><code>/);
 });
+
+test('рендерит inline-сноску в sup со ссылкой', () => {
+  const html = renderMarkdown('Утверждение.^[Сноска текст.]');
+  assert.match(html, /<sup class="footnote-ref">/);
+  assert.match(html, /<a href="#fn1"/);
+  assert.match(html, /id="fnref1"/);
+});
+
+test('рендерит блок footnotes с обратной ссылкой', () => {
+  const html = renderMarkdown('Текст.^[Сноска.]\n');
+  assert.match(html, /<section class="footnotes">/);
+  assert.match(html, /id="fn1"/);
+  assert.match(html, /class="footnote-backref"/);
+  assert.match(html, /#fnref1/);
+});
+
+test('рендерит именованную сноску с кликабельным URL', () => {
+  const html = renderMarkdown('Факт[^src].\n\n[^src]: https://example.com — описание.\n');
+  assert.match(html, /<a href="https:\/\/example.com"/);
+  assert.match(html, /<section class="footnotes">/);
+});
+
+test('sanitize-html не вырезает id/class у footnote-элементов', () => {
+  const html = renderMarkdown('А.^[Б.]\n');
+  assert.match(html, /id="fn1"/);
+  assert.match(html, /id="fnref1"/);
+  assert.match(html, /class="footnote-ref"/);
+  assert.match(html, /class="footnotes"/);
+  assert.match(html, /class="footnote-backref"/);
+});
