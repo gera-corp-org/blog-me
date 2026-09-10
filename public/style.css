@@ -519,6 +519,41 @@ button {
 
 button:hover { border-color: var(--accent); color: var(--accent); }
 
+/* Markdown toolbar */
+
+.md-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.35rem;
+  border: 1px solid var(--rule);
+  border-bottom: none;
+  background: var(--panel);
+}
+
+.md-toolbar-btn {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  line-height: 1;
+  min-width: 1.8rem;
+  text-align: center;
+}
+
+.md-toolbar-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: none;
+}
+
+/* Toolbar attached to textarea — remove double border */
+.md-toolbar + textarea { border-top: none; }
+
 .editor-actions {
   display: flex;
   flex-wrap: wrap;
