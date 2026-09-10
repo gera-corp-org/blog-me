@@ -414,6 +414,45 @@ h1, h2, h3 {
   color: var(--fg);
 }
 
+/* Syntax highlighting (highlight.js — GitHub Dark adapted) */
+
+.hljs-comment,
+.hljs-quote { color: #8b949e; font-style: italic; }
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-type,
+.hljs-built_in { color: #ff7b72; }
+
+.hljs-string,
+.hljs-attr + .hljs-string,
+.hljs-template-variable { color: #a5d6ff; }
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-params { color: #79c0ff; }
+
+.hljs-function .hljs-title,
+.hljs-title.function_ { color: #d2a8ff; }
+
+.hljs-title.class_ { color: #ffa657; }
+
+.hljs-attr,
+.hljs-attribute { color: #79c0ff; }
+
+.hljs-symbol,
+.hljs-bullet { color: #f2cc60; }
+
+.hljs-regexp { color: #a5d6ff; }
+
+.hljs-section { color: #1f6feb; font-weight: 700; }
+
+.hljs-meta { color: #8b949e; }
+
+.hljs-addition { color: #aff5b4; background: rgba(3, 58, 22, 0.5); }
+.hljs-deletion { color: #ffdcd7; background: rgba(103, 6, 12, 0.5); }
+
 .post-body table {
   margin: 2rem 0;
   width: 100%;

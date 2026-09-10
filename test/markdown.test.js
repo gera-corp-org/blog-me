@@ -65,3 +65,20 @@ test('sanitize-html не вырезает id/class у footnote-элементо�
   assert.match(html, /class="footnotes"/);
   assert.match(html, /class="footnote-backref"/);
 });
+
+test('подсвечивает синтаксис bash в fenced code blocks', () => {
+  const html = renderMarkdown('```bash\nif [ -f /tmp/test ]; then echo yes; fi\n```');
+  assert.match(html, /class="language-bash"/);
+  assert.match(html, /hljs-keyword/);
+});
+
+test('подсвечивает синтаксис YAML', () => {
+  const html = renderMarkdown('```yaml\napiVersion: v1\nkind: Pod\n```');
+  assert.match(html, /class="language-yaml"/);
+  assert.match(html, /hljs-attr/);
+});
+
+test('sanitize-html не вырезает span.hljs-классы', () => {
+  const html = renderMarkdown('```js\nconst x = 1;\n```');
+  assert.match(html, /<span class="hljs-/);
+});

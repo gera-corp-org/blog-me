@@ -1,14 +1,25 @@
 import MarkdownIt from 'markdown-it';
 import footnote from 'markdown-it-footnote';
+import hljs from 'highlight.js';
 import sanitizeHtml from 'sanitize-html';
 
-const markdown = new MarkdownIt({ html: true, linkify: true, typographer: true })
-  .use(footnote);
+const markdown = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  highlight(str, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      try { return hljs.highlight(str, { language: lang }).value; }
+      catch { /* fall through */ }
+    }
+    return ''; // use external default escaping
+  },
+}).use(footnote);
 
 const OPTIONS = {
   allowedTags: [
     'p', 'br', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
+    'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'span',
     'em', 'strong', 'del', 's', 'a', 'img',
     'table', 'thead', 'tbody', 'tr', 'th', 'td',
     'figure', 'figcaption',
@@ -18,6 +29,7 @@ const OPTIONS = {
     a: ['href', 'title', 'rel', 'id', 'class'],
     img: ['src', 'alt', 'title', 'loading'],
     code: ['class'],
+    span: ['class'],
     th: ['colspan', 'rowspan'],
     td: ['colspan', 'rowspan'],
     sup: ['class'],
