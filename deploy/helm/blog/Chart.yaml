@@ -2,5 +2,5 @@ apiVersion: v2
 name: blog
 description: Personal blog — Fastify + SQLite, single replica
 type: application
-version: 0.1.4
-appVersion: "1.0.4"
+version: 0.1.5
+appVersion: "1.0.5"
