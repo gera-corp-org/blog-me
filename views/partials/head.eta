@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <title><%= it.pageTitle %></title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="alternate" type="application/atom+xml" title="<%= it.site.title %>" href="/feed.xml">
